@@ -1,0 +1,7 @@
+setup.py
+media_streaming_tool.egg-info/PKG-INFO
+media_streaming_tool.egg-info/SOURCES.txt
+media_streaming_tool.egg-info/dependency_links.txt
+media_streaming_tool.egg-info/entry_points.txt
+media_streaming_tool.egg-info/requires.txt
+media_streaming_tool.egg-info/top_level.txt

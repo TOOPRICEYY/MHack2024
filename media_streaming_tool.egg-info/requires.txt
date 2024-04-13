@@ -1,0 +1,5 @@
+Flask>=2.0.1
+requests>=2.25.1
+
+[dev]
+pytest>=6.2.5

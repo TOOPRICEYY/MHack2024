@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: media_streaming_tool
+Version: 0.2
+Summary: A tool to separate audio and video from a .webm file and extract frames as images.
+Author: Your Name
+Author-email: your.email@example.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Requires-Dist: Flask>=2.0.1
+Requires-Dist: requests>=2.25.1
+Provides-Extra: dev
+Requires-Dist: pytest>=6.2.5; extra == "dev"
