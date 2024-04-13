@@ -24,8 +24,8 @@ def stream_frames():
     audio_command = f"ffmpeg -i pipe:0 -vn -acodec libmp3lame -f mp3 -y media_output/{time.time()}.mp3"
 
     # Start subprocesses
-    video_process = subprocess.Popen(video_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    audio_process = subprocess.Popen(audio_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    video_process = subprocess.Popen(shlex.split(video_command), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    audio_process = subprocess.Popen(shlex.split(audio_command), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Read the incoming data from request
     chunk = request.get_data()
@@ -70,4 +70,4 @@ def stream_frames():
 if __name__ == '__main__':
     walk =  next(os.walk("media_output"))
     for f in walk[2]: os.remove(os.path.join(walk[0],f))
-    app.run(debug=False, port=5001, threaded=True)#, ssl_context=('cert.pem', 'server.key'))
+    app.run(debug=True, port=5001, threaded=True)#, ssl_context=('cert.pem', 'server.key'))
