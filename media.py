@@ -4,47 +4,47 @@ import shlex
 
 app = Flask(__name__)
 
-def stream_video_frames(url):
-    """
-    Use ffmpeg to stream video frames from a URL and convert them to JPEG.
-    Yields JPEG frames.
-    """
-    command = f"ffmpeg -i {shlex.quote(url)} -f image2pipe -vcodec mjpeg -"
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True, bufsize=10**8)
-    while True:
-        # Read frame-by-frame
-        data = process.stdout.read(4096)
-        if not data:
-            break
-        yield data
-
-def stream_audio_data(url):
-    """
-    Use ffmpeg to extract and stream audio from a video URL.
-    Yields audio data in MP3 format.
-    """
-    command = f"ffmpeg -i {shlex.quote(url)} -f mp3 -vn -"
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=True, bufsize=10**8)
-    while True:
-        # Read audio data
-        data = process.stdout.read(4096)
-        if not data:
-            break
-        yield data
-
-@app.route('/stream_frames')
+@app.route('/stream_frames', methods=['POST'])
 def stream_frames():
-    video_url = request.args.get('video_url')
-    if not video_url:
-        return "Missing video_url parameter", 400
-    return Response(stream_with_context(stream_video_frames(video_url)), mimetype='multipart/x-mixed-replace; boundary=frame')
+    def generate_frames():
+        command = "ffmpeg -i pipe:0 -f image2pipe -vcodec mjpeg -"
+        process = subprocess.Popen(shlex.split(command), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        try:
+            while True:
+                chunk = request.stream.read(4096)
+                if not chunk:
+                    break
+                process.stdin.write(chunk)
+                process.stdin.flush()
+                frame_data = process.stdout.read(4096)
+                if not frame_data:
+                    break
+                yield frame_data
+        finally:
+            process.terminate()
+            process.wait()
+    return Response(stream_with_context(generate_frames()), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/stream_audio')
+@app.route('/stream_audio', methods=['POST'])
 def stream_audio():
-    video_url = request.args.get('video_url')
-    if not video_url:
-        return "Missing video_url parameter", 400
-    return Response(stream_with_context(stream_audio_data(video_url)), mimetype='audio/mpeg')
+    def generate_audio():
+        command = "ffmpeg -i pipe:0 -f mp3 -vn -"
+        process = subprocess.Popen(shlex.split(command), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        try:
+            while True:
+                chunk = request.stream.read(4096)
+                if not chunk:
+                    break
+                process.stdin.write(chunk)
+                process.stdin.flush()
+                audio_data = process.stdout.read(4096)
+                if not audio_data:
+                    break
+                yield audio_data
+        finally:
+            process.terminate()
+            process.wait()
+    return Response(stream_with_context(generate_audio()), mimetype='audio/mpeg')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
