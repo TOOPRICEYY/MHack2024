@@ -9,7 +9,6 @@ genai.configure(api_key=GOOGLE_API_KEY)
 # q = Queue.queue()
 all_uploaded_audios = {}
 all_uploaded_frames = {}
-current_audios = []
 time_start = -1
 APPDATA = os.path.join('.','media_output')
 
@@ -32,7 +31,6 @@ def upload_audio(url):
     all_uploaded_audios[url]=response
     print(f'Uploading: {url}...')
     response = genai.upload_file(path=url)
-    current_audios.append(url)
 
 def upload_frame(url):
     print(f'Uploading: {url}...')
@@ -44,17 +42,10 @@ def upload_all():
     audios = sorted(all_uploaded_audios.values(),key=get_timestamp)
     return frames,audios
 
-def upload_30s():
-    # Get Gemini file URLs correpsonding to this batch of files
-    frames = [all_uploaded_frames[url] for url in match_video(current_audios)]
-    audios = [all_uploaded_audios[url] for url in current_audios]
-    current_audios = []
-    return frames,audios
-
-def process_30s():
+def process():
     """Called every 30 seconds to process current audio and images in the buffer."""
     print("processing")
-    frames,audios=upload_30s()
+    frames,audios=upload_all()
 
     # Create the prompt.
     prompt = "Watch and describe this video. An audio for it will be given after."
@@ -108,14 +99,12 @@ def match_video(audios):
             imgs.append(imfp)
     return imgs
 
-
 def main_thread():
     th1=Thread(target=scan_for_uploads)
-    th1.daemon=True
     th1.start()
 
     while True:
-        th2=Thread(target=process_30s)
+        th2=Thread(target=process)
         th2.start()
         th2.join()
         sleep(30)
@@ -123,4 +112,4 @@ def main_thread():
 
 tr=Thread(target=main_thread)
 tr.start()
-tr.join(timeout=10)
+tr.join(timeout=40)
