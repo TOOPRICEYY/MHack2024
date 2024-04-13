@@ -20,7 +20,7 @@ def stream_frames():
 
     # Prepare command to extract 10 frames and audio
 
-    video_command = "ffmpeg -i pipe:0 -an -vf fps=1/0.5 -vframes 10 -f image2jpeg pipe:1"
+    video_command = "ffmpeg -i pipe:0 -vframes 1 -f image2pipe -vcodec mjpeg -"
     audio_command = f"ffmpeg -i pipe:0 -vn -acodec libmp3lame -f mp3 -y media_output/{time.time()}.mp3"
 
     # Start subprocesses
@@ -39,9 +39,10 @@ def stream_frames():
         audio_process.stdin.close()
 
         # Read video frames output
+        # frame_data = video_process.stdout.read()
         frames = []
-        for i in range(10):
-            frame_data = video_process.stdout.read(1024*1024)  # Adjust buffer size as necessary
+        for i in range(1):
+            frame_data = video_process.stdout.read()  # Adjust buffer size as necessary
             frame_path = os.path.join(output_directory, f'frame_{time.time()+i}.jpg')
             with open(frame_path, 'wb') as f:
                 f.write(frame_data)
