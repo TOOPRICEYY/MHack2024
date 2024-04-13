@@ -40,12 +40,12 @@ def stream_frames():
 
         # Read video frames output
         frames = []
-        # for i in range(10):
-        #     frame_data = video_process.stdout.read(1024*1024)  # Adjust buffer size as necessary
-        #     frame_path = os.path.join(output_directory, f'frame_{time.time()+i}.jpg')
-        #     with open(frame_path, 'wb') as f:
-        #         f.write(frame_data)
-        #     frames.append(frame_path)
+        for i in range(10):
+            frame_data = video_process.stdout.read(1024*1024)  # Adjust buffer size as necessary
+            frame_path = os.path.join(output_directory, f'frame_{time.time()+i}.jpg')
+            with open(frame_path, 'wb') as f:
+                f.write(frame_data)
+            frames.append(frame_path)
 
         # Wait for subprocesses to finish
         video_process.wait()

@@ -71,27 +71,35 @@ function streamToServer(mediaStream, videoUrl, audioUrl) {
     //     console.error("Error starting audio recorder:", e);
     // }
     
-    try {
+    // try {
         const videoRecorder = new MediaRecorder(mediaStream);
-        const chunks = [];
+        chunks = [];
 
         videoRecorder.ondataavailable = (e) => {
 
             chunks.push(e.data);
+            console.log("dataAvailable");    
+
 
         };
-        videoRecorder.onstop = (e) => {sendData(new Blob(chunks), "test.wav");console.log("Video sent");    
-        
+        videoRecorder.onstop = (e) => {sendData(new Blob(chunks), videoUrl);
+            console.log("Video sent");    
+            // saveToFile(new Blob(chunks),"file.webm")
+            chunks = []
+            videoRecorder.start(); // Collect data for 5.5 seconds per blob
+            setTimeout(() => {videoRecorder.stop(); console.log("killed video recorder")}, 5000);
+        }
         videoRecorder.start(); // Collect data for 5.5 seconds per blob
-        setTimeout(() => videoRecorder.stop(), 5000);
 
-    }
+        setTimeout(() => {videoRecorder.stop(); console.log("killed video recorder")}, 5000);
 
         
-        console.log("Video recorder started");
-    } catch (e) {
-        console.error("Error starting video recorder:", e);
-    }
+
+        
+        console.log("Video recorder started!!!!!");
+    // } catch (e) {
+    //     console.error("Error starting video recorder:", e);
+    // }
 
     
 }
