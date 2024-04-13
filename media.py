@@ -82,10 +82,7 @@ def process_mjpeg_stream(stream):
             frame_data += chunk[:start_marker]
 
             # Process the complete frame
-            frame_bytes = BytesIO(frame_data)
-            frame_image = Image.open(frame_bytes)
-
-            frame_image = frame_image.convert("RGB")
+            frame_image=process_frame(frame_data)
             all_frame_images.append(frame_image)
 
             # Reset the frame_data and start processing the next frame
@@ -96,7 +93,18 @@ def process_mjpeg_stream(stream):
 
     # Process the last frame, if any
     if frame_data:
-        process_frame(frame_data)
+        frame_image=process_frame(frame_data)
+        all_frame_images.append(frame_image)
+
+def process_frame(frame_data):
+    frame_bytes = BytesIO(frame_data)
+    frame_image = Image.open(frame_bytes)
+
+    # Convert the image to the format you desire (e.g., RGB)
+    frame_image = frame_image.convert("RGB")
+
+    # Now you can use the frame_image for further processing or display
+    return frame_image
 
 # Make a POST request to the /stream_frames route
 response = requests.post('http://localhost:5000/stream_frames', stream=True)
