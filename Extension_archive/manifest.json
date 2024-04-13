@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Audio Echo Extension",
+  "version": "1.0",
+  "permissions": [
+    "desktopCapture"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  }
+}

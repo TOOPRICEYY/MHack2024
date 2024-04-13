@@ -1,0 +1,24 @@
+{
+    "name": "tab capture test",
+    "description": "Manifest v3 tab capture test",
+    "version": "0.1.0",
+    "manifest_version": 3,
+    "permissions": ["tabs", "activeTab", "tabCapture","identity","storage"],
+    "host_permissions": [
+        "https://meet.google.com/*"
+    ],
+    
+    "action": {
+        "default_title": "tab capture test",
+        "default_popup": "popup.html"
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": ["https://meet.google.com/*"],
+            "js": ["content.js","googleapis.js"]
+        }
+    ]
+}
