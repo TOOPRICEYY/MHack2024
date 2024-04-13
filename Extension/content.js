@@ -51,7 +51,7 @@ function captureAndStreamMedia(streamId) {
         console.log("RECORDING!!!");
         inspectTracks(stream); // Inspect the tracks
 
-        streamToServer(stream, 'https://127.0.0.1:5001/stream_frames', 'https://127.0.0.1:5001/stream_audio');
+        streamToServer(stream, 'http://127.0.0.1:5001/stream_frames', 'http://127.0.0.1:5001/stream_audio');
     })
 }
 

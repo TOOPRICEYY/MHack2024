@@ -64,4 +64,4 @@ def stream_frames():
 if __name__ == '__main__':
     walk =  next(os.walk("media_output"))
     for f in walk[2]: os.remove(os.path.join(walk[0],f))
-    app.run(debug=True, port=5001, ssl_context=('cert.pem', 'server.key'))
+    app.run(debug=True, port=5001)#, ssl_context=('cert.pem', 'server.key'))
