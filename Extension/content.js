@@ -13,7 +13,7 @@ if (document.readyState !== 'loading') {
 
 function myInitCode() {
     // Request the active tab ID from the background script
-    chrome.runtime.sendMessage({command: 'query-active-tab'}, (response) => {
+    chrome.runtime.sendMessage({ command: 'query-active-tab' }, (response) => {
         tabId = response.id;
         console.log("Querying tab");
     });
@@ -46,7 +46,7 @@ function captureAndStreamMedia(streamId) {
                 chromeMediaSourceId: streamId
             }
         }
-        
+
     }).then(stream => {
         console.log("RECORDING!!!");
         inspectTracks(stream); // Inspect the tracks
@@ -70,61 +70,61 @@ function streamToServer(mediaStream, videoUrl, audioUrl) {
     // } catch (e) {
     //     console.error("Error starting audio recorder:", e);
     // }
-    
+
     // try {
-        const videoRecorder = new MediaRecorder(mediaStream);
-        chunks = [];
+    const videoRecorder = new MediaRecorder(mediaStream);
+    chunks = [];
 
-        videoRecorder.ondataavailable = (e) => {
+    videoRecorder.ondataavailable = (e) => {
 
-            chunks.push(e.data);
-            console.log("dataAvailable");    
+        chunks.push(e.data);
+        console.log("dataAvailable");
 
 
-        };
-        videoRecorder.onstop = (e) => {
-            sendData(new Blob(chunks), videoUrl,()=>{
-            console.log("Video sent");    
+    };
+    videoRecorder.onstop = (e) => {
+        sendData(new Blob(chunks), videoUrl, () => {
+            console.log("Video sent");
             // saveToFile(new Blob(chunks),"file.webm")
             chunks = []
             videoRecorder.start(); // Collect data for 5.5 seconds per blob
-            setTimeout(() => {videoRecorder.stop(); console.log("killed video recorder")}, 5000);
-            });
-        }
-        videoRecorder.start(); // Collect data for 5.5 seconds per blob
+            setTimeout(() => { videoRecorder.stop(); console.log("killed video recorder") }, 500);
+        });
+    }
+    videoRecorder.start(); // Collect data for 5.5 seconds per blob
 
-        setTimeout(() => {videoRecorder.stop(); console.log("killed video recorder")}, 5000);
+    setTimeout(() => { videoRecorder.stop(); console.log("killed video recorder") }, 500);
 
-        
 
-        
-        console.log("Video recorder started!!!!!");
+
+
+    console.log("Video recorder started!!!!!");
     // } catch (e) {
     //     console.error("Error starting video recorder:", e);
     // }
 
-    
+
 }
 
 
-function sendData(data, url,callback = ()=> {}) {
+function sendData(data, url, callback = () => { }) {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url, true);
     xhr.send(data);
 
     let loaded = false;
-    xhr.onload = function() {
+    xhr.onload = function () {
         if (xhr.status === 200) {
             console.log('Success:', xhr.responseText);
         } else {
             console.log('Error:', xhr.statusText);
         }
-        if(!loaded) callback();
+        if (!loaded) callback();
         loaded = true;
     };
-    setTimeout(()=>{if(!loaded){console.error("POST to",url,"timed out");callback();loaded=true}},5000)
+    setTimeout(() => { if (!loaded) { console.error("POST to", url, "timed out"); callback(); loaded = true } }, 5000)
 
-    xhr.onerror = function() {
+    xhr.onerror = function () {
         console.error('Network error.');
     };
 }

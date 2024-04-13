@@ -7,6 +7,9 @@ import json
 import time
 import os
 import threading
+from threading import Thread
+# from periodic_call import main_call
+
 
 app = Flask(__name__)
 CORS(app)
@@ -31,13 +34,12 @@ def stream_frames():
     chunk = request.get_data()
     if chunk:
         # Write data to both subprocesses
-        def write_to_stdin(pp, chunk,im=False):
+        def write_to_stdin(pp, chunk):
             pp.stdin.write(chunk)
             pp.stdin.flush()
-            print("wrote")
             pp.stdin.close()
 
-        thread1 = threading.Thread(target=write_to_stdin, args=(video_process, chunk,True))
+        thread1 = threading.Thread(target=write_to_stdin, args=(video_process, chunk))
         thread1.start()
 
         thread2 = threading.Thread(target=write_to_stdin, args=(audio_process, chunk))
@@ -71,3 +73,4 @@ if __name__ == '__main__':
     walk =  next(os.walk("media_output"))
     for f in walk[2]: os.remove(os.path.join(walk[0],f))
     app.run(debug=True, port=5001, threaded=True)#, ssl_context=('cert.pem', 'server.key'))
+    # th = Thread(target = main_call,)

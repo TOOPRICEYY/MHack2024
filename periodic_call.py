@@ -20,18 +20,19 @@ def scan_for_uploads():
         for file in os.listdir(APPDATA):
             if file.endswith('.mp3'):
                 if file not in all_uploaded_audios:
-                    upload_audio(file)
+                    fp=os.path.join(APPDATA,file)
+                    upload_audio(fp)
             else:
                 if file not in all_uploaded_frames:
-                    upload_frame(file)
+                    fp=os.path.join(APPDATA,file)
+                    upload_frame(fp)
         sleep(1)
 
 def upload_audio(url):
+    all_uploaded_audios[url]=response
     print(f'Uploading: {url}...')
     response = genai.upload_file(path=url)
-    all_uploaded_audios[url]=response
     current_audios.append(url)
-
 
 def upload_frame(url):
     print(f'Uploading: {url}...')
@@ -101,9 +102,10 @@ def match_video(audios):
     start_time, end_time = get_time_frame(audios)
     imgs = []
     for im in os.listdir(APPDATA):
-        ts = get_timestamp(im)
+        imfp = os.path.join(APPDATA,im)
+        ts = get_timestamp(imfp)
         if start_time<=ts<=end_time:
-            imgs.append(im)
+            imgs.append(imfp)
     return imgs
 
 
@@ -121,4 +123,4 @@ def main_thread():
 
 tr=Thread(target=main_thread)
 tr.start()
-tr.join()
+tr.join(timeout=10)
