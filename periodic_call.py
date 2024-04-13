@@ -115,7 +115,7 @@ def main_thread():
     while True:
         th2=Thread(target=process_30s)
         th2.start()
-        th2.join()
+        th2.jo
         sleep(30)
 
 
