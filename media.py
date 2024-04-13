@@ -16,28 +16,16 @@ def stream_frames():
         command = "ffmpeg -i pipe:0 -f image2pipe -vcodec mjpeg -"
         process = subprocess.Popen(shlex.split(command), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         try:
-            frame_count = 0
             while True:
-                chunk = request.stream.read(CHUNK_SIZE)
+                chunk = request.stream.read(4096)
                 if not chunk:
                     break
                 process.stdin.write(chunk)
                 process.stdin.flush()
-                frame_data = process.stdout.read(CHUNK_SIZE)
+                frame_data = process.stdout.read(4096)
                 if not frame_data:
                     break
                 yield frame_data
-                frame_count += 1
-                if frame_count >= 30:
-                    # Pause after sending 30 frames
-                    frame_count = 0
-                    while True:
-                        # Yield an empty frame data to indicate pause
-                        yield b''
-                        # Wait for the downstream function to signal to resume
-                        signal = request.stream.read(CHUNK_SIZE)
-                        if signal.strip() == b"resume":
-                            break
         finally:
             process.terminate()
             process.wait()
