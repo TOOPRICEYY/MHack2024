@@ -1,82 +1,129 @@
-// Service worker sent us the stream ID, use it to get the stream
 let tabId;
 
-// Fetch tab immediately
+// Initialize the extension's functionality once the document is ready
 if (document.readyState !== 'loading') {
-    console.log('document is already ready, just execute code here');
+    console.log('Document is ready woo');
     myInitCode();
 } else {
     document.addEventListener('DOMContentLoaded', function () {
-        console.log('document was not ready, place code here');
+        console.log('Document was not ready, place code here');
         myInitCode();
     });
 }
+
 function myInitCode() {
+    // Request the active tab ID from the background script
+    chrome.runtime.sendMessage({command: 'query-active-tab'}, (response) => {
+        tabId = response.id;
+        console.log("Querying tab");
+    });
+    console.log("Past tab query");
 
-// content.js
-chrome.runtime.sendMessage({command: 'query-active-tab'}, (response) => {
-    tabId = response.id;
-    console.log("querying tab")
-});
-console.log("Past tab query")
+    // Listener for messages from the background script
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        console.log("Content running");
+        captureAndStreamMedia(request.streamId);
+    });
+    console.log("On to media query");
+}
+function inspectTracks(mediaStream) {
+    mediaStream.getTracks().forEach(track => {
+        console.log(`Track kind: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`);
+    });
+}
 
-// Example of functionality to run immediately
-    
-    
-    // Additional code to perform actions goes here
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log("content running")
+function captureAndStreamMedia(streamId) {
     navigator.mediaDevices.getUserMedia({
-        video: true,
         video: {
             mandatory: {
                 chromeMediaSource: 'tab',
-                chromeMediaSourceId: request.streamId
+                chromeMediaSourceId: streamId
             }
         },
-        audio: true,
         audio: {
             mandatory: {
                 chromeMediaSource: 'tab',
-                chromeMediaSourceId: request.streamId
+                chromeMediaSourceId: streamId
             }
         }
-    })
-    .then((stream) => {
-        // Once we're here, the audio in the tab is muted
-        // However, recording the audio works!
-        console.log("RECORDING!!!")
-        const recorder = new MediaRecorder(stream);
-        const chunks = [];
-        recorder.ondataavailable = (e) => {
-            chunks.push(e.data);
-        };
-        recorder.onstop = (e) => saveToFile(new Blob(chunks), "test.webm");
-        recorder.start();
-        setTimeout(() => recorder.stop(), 5000);
-    });
-});
+        
+    }).then(stream => {
+        console.log("RECORDING!!!");
+        inspectTracks(stream); // Inspect the tracks
 
-console.log("on to media query")
-// chrome.tabCapture.getMediaStreamId({consumerTabId: tabId}, (streamId) => {
-//     console.log("Getting media")
-//     chrome.runtime.sendMessage({
-//         command: 'tab-media-stream',
-//         tabId: tabId,
-//         streamId: streamId
-//     })
-// });
+        streamToServer(stream, 'https://127.0.0.1:5001/stream_frames', 'https://127.0.0.1:5001/stream_audio');
+    })
 }
+
+function streamToServer(mediaStream, videoUrl, audioUrl) {
+
+    // try {
+    //     const audioRecorder = new MediaRecorder(mediaStream, { mimeType: 'audio/webm' });
+    //     audioRecorder.ondataavailable = event => {
+    //         if (event.data.size > 0) {
+    //             sendData(event.data, audioUrl);
+    //             console.log("Audio sent");
+    //         }
+    //     };
+    //     audioRecorder.start(5500); // Collect data for 5.5 seconds per blob
+    //     console.log("Audio recorder started");
+    // } catch (e) {
+    //     console.error("Error starting audio recorder:", e);
+    // }
+    
+    try {
+        const videoRecorder = new MediaRecorder(mediaStream);
+        const chunks = [];
+
+        videoRecorder.ondataavailable = (e) => {
+
+            chunks.push(e.data);
+
+        };
+        videoRecorder.onstop = (e) => {sendData(new Blob(chunks), "test.wav");console.log("Video sent");    
+        
+        videoRecorder.start(); // Collect data for 5.5 seconds per blob
+        setTimeout(() => videoRecorder.stop(), 5000);
+
+    }
+
+        
+        console.log("Video recorder started");
+    } catch (e) {
+        console.error("Error starting video recorder:", e);
+    }
+
+    
+}
+
+
+function sendData(data, url) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.send(data);
+
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            console.log('Success:', xhr.responseText);
+        } else {
+            console.log('Error:', xhr.statusText);
+        }
+    };
+
+    xhr.onerror = function() {
+        console.error('Network error.');
+    };
+}
+
 
 function saveToFile(blob, name) {
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     document.body.appendChild(a);
-    a.style = "display: none";
+    a.style = 'display: none';
     a.href = url;
     a.download = name;
     a.click();
-    URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(url);
     a.remove();
 }

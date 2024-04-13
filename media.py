@@ -1,82 +1,67 @@
-from flask import Flask, Response, request, stream_with_context
+from flask import Flask, request, send_file
+from flask_cors import CORS
 import subprocess
 import shlex
-from io import BytesIO
-from PIL import Image
-import requests
+import os
+import json
+import time
+import os
 
 app = Flask(__name__)
-CHUNK_SIZE = 4096  # Adjust chunk size as needed
-CHUNK_INTERVAL = 30  # Time interval for each chunk in seconds
+CORS(app)
 
+output_directory = 'media_output'
+os.makedirs(output_directory, exist_ok=True)  # Ensure the output directory exists
 
 @app.route('/stream_frames', methods=['POST'])
 def stream_frames():
-    def generate_frames():
-        command = "ffmpeg -i pipe:0 -f image2pipe -vcodec mjpeg -"
-        process = subprocess.Popen(shlex.split(command), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        try:
-            while True:
-                chunk = request.stream.read(4096)
-                if not chunk:
-                    break
-                process.stdin.write(chunk)
-                process.stdin.flush()
-                frame_data = process.stdout.read(4096)
-                if not frame_data:
-                    break
-                yield frame_data
-        finally:
-            process.terminate()
-            process.wait()
-    return Response(stream_with_context(generate_frames()), mimetype='multipart/x-mixed-replace; boundary=frame')
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
 
-@app.route('/stream_audio', methods=['POST'])
-def stream_audio():
-    def generate_audio():
-        command = "ffmpeg -i pipe:0 -f mp3 -vn -"
-        process = subprocess.Popen(shlex.split(command), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        try:
-            while True:
-                chunk = request.stream.read(CHUNK_SIZE)
-                if not chunk:
-                    break
-                process.stdin.write(chunk)
-                process.stdin.flush()
-                audio_data = process.stdout.read(CHUNK_SIZE)
-                if not audio_data:
-                    break
-                yield audio_data
-        finally:
-            process.terminate()
-            process.wait()
-    return Response(stream_with_context(generate_audio()), mimetype='audio/mpeg')
+    # Prepare command to extract 10 frames and audio
+
+    video_command = "ffmpeg -i pipe:0 -an -vf fps=1/0.5 -vframes 10 -f image2jpeg pipe:1"
+    audio_command = f"ffmpeg -i pipe:0 -vn -acodec libmp3lame -f mp3 -y media_output/{time.time()}.mp3"
+
+    # Start subprocesses
+    video_process = subprocess.Popen(shlex.split(video_command), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    audio_process = subprocess.Popen(shlex.split(audio_command), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Read the incoming data from request
+    chunk = request.get_data()
+    if chunk:
+        # Write data to both subprocesses
+        video_process.stdin.write(chunk)
+        audio_process.stdin.write(chunk)
+        
+        # Close stdin to signal EOF to ffmpeg
+        video_process.stdin.close()
+        audio_process.stdin.close()
+
+        # Read video frames output
+        frames = []
+        # for i in range(10):
+        #     frame_data = video_process.stdout.read(1024*1024)  # Adjust buffer size as necessary
+        #     frame_path = os.path.join(output_directory, f'frame_{time.time()+i}.jpg')
+        #     with open(frame_path, 'wb') as f:
+        #         f.write(frame_data)
+        #     frames.append(frame_path)
+
+        # Wait for subprocesses to finish
+        video_process.wait()
+        audio_process.wait()
+
+        # Return paths to saved files
+        response = {
+            "frames": frames,
+            "audio": os.path.join(output_directory, f"media_output/{time.time()}.mp3")
+        }
+        return json.dumps(response)
+
+    return "No data received", 400
+
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
-
-
-all_frame_images = []
-
-def read_streamed_audio():
-    response = requests.post('http://localhost:5000/stream_audio', stream=True)
-    if response.status_code == 200:
-        audio_buffer = io.BytesIO()  # Buffer to accumulate audio data
-        start_time = time.time()  # Start time for timing chunks
-
-        for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
-            if chunk:
-                audio_buffer.write(chunk)
-
-                # Check if it's time to process a chunk
-                if time.time() - start_time >= CHUNK_INTERVAL:
-                    process_audio_chunk(audio_buffer.getvalue())
-                    audio_buffer = io.BytesIO()  # Reset the buffer
-                    start_time = time.time()  # Reset the start time
-
-        # Process any remaining audio data
-        if audio_buffer.tell() > 0:
-            process_audio_chunk(audio_buffer.getvalue())
-
-    else:
-        print("Failed to stream audio")
+    walk =  next(os.walk("media_output"))
+    for f in walk[2]: os.remove(os.path.join(walk[0],f))
+    app.run(debug=True, port=5001, ssl_context=('cert.pem', 'server.key'))
