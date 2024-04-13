@@ -15,6 +15,13 @@ import media
 q_audio = queue.Queue()
 q_video = queue.Queue()
 
+all_video_frame = []
+all_audio = []
+
+
+# 
+
+
 class File:
   def __init__(self, file_path: str, display_name: str = None):
     self.file_path = file_path
@@ -35,13 +42,55 @@ def get_timestamp(filename):
   return parts[0]
 
 
-def pull_video_and_upload(url,q):
-  file=File(file_path=os.path.join(url, "audio", "out.mp3"))
-  print(f'Uploading: {file.file_path}...')
-  # Upload the files to the API
-  response = genai.upload_file(path=file.file_path)
-  file.set_file_response(response)
-  q.put(file)
+def pull_video_and_upload(url,q,):
+
+    # Sample list of UTC timestamps
+    timestamps = [
+        '2023-04-24T12:34:56.789Z',
+        '2023-04-24T12:34:57.012Z',
+        '2023-04-24T12:34:55.456Z',
+        '2023-04-24T1    '2023-04-24T12:34:56.123Z'
+    ]
+        
+    # Sample video data (replace with your actual video data)
+    video_data = b'...your video data...'
+
+    # Make a POST request to the /stream_frames route
+    response = requests.post('http://localhost:5000/stream_frames', data=video_data, stream=True)
+
+    # Process the streamed frames
+    if response.status_code == 200:
+        for frame in response.iter_content(chunk_size=4096):
+            if frame:
+                # Process the frame data
+                print(f"Received frame: {len(frame)} bytes")
+    else:
+        print(f"Error: {response.status_code}")
+
+
+    for img in os.listdir(url):
+        
+
+    # Convert timestamps to datetime objects
+    datetime_objects = [datetime.fromisoformat(ts.replace('Z', '+00:00')) for ts in timestamps]
+    # Sort the datetime objects
+    sorted_datetimes = sorted(datetime_objects)
+
+    # Find the timestamp of the first frame
+    first_frame_timestamp = sorted_datetimes[0]
+
+    # Zero the timestamps by subtracting the firzeroed_timestamps = [(dt - first_frame_timestamp).total_seconds() for dt in sorted_datetimes]
+
+    # Print the sorted and zeroed timestamps
+    for ts in zeroed_timestamps:
+        print(f"{ts:.2f} seconds")
+
+    file=File(file_path=os.path.join(url, "audio", "out.mp3"))
+    print(f'Uploading: {file.file_path}...')
+    # Upload the files to the API
+    response = genai.upload_file(path=file.file_path)
+    file.set_file_response(response)
+    q.put(file)
 
 def pull_audio_and_upload(url,q):
   # Process each frame in the output directory

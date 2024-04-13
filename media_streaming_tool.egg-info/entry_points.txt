@@ -1,0 +1,2 @@
+[console_scripts]
+media_streaming_tool = media_streaming_tool.app:app.run

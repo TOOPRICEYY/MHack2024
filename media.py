@@ -6,6 +6,9 @@ from PIL import Image
 import requests
 
 app = Flask(__name__)
+CHUNK_SIZE = 4096  # Adjust chunk size as needed
+CHUNK_INTERVAL = 30  # Time interval for each chunk in seconds
+
 
 @app.route('/stream_frames', methods=['POST'])
 def stream_frames():
@@ -15,12 +18,12 @@ def stream_frames():
         try:
             frame_count = 0
             while True:
-                chunk = request.stream.read(4096)
+                chunk = request.stream.read(CHUNK_SIZE)
                 if not chunk:
                     break
                 process.stdin.write(chunk)
                 process.stdin.flush()
-                frame_data = process.stdout.read(4096)
+                frame_data = process.stdout.read(CHUNK_SIZE)
                 if not frame_data:
                     break
                 yield frame_data
@@ -32,7 +35,7 @@ def stream_frames():
                         # Yield an empty frame data to indicate pause
                         yield b''
                         # Wait for the downstream function to signal to resume
-                        signal = request.stream.read(4096)
+                        signal = request.stream.read(CHUNK_SIZE)
                         if signal.strip() == b"resume":
                             break
         finally:
@@ -47,12 +50,12 @@ def stream_audio():
         process = subprocess.Popen(shlex.split(command), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         try:
             while True:
-                chunk = request.stream.read(4096)
+                chunk = request.stream.read(CHUNK_SIZE)
                 if not chunk:
                     break
                 process.stdin.write(chunk)
                 process.stdin.flush()
-                audio_data = process.stdout.read(4096)
+                audio_data = process.stdout.read(CHUNK_SIZE)
                 if not audio_data:
                     break
                 yield audio_data
@@ -67,50 +70,25 @@ if __name__ == '__main__':
 
 all_frame_images = []
 
-def process_mjpeg_stream(stream):
-    frame_data = b''
-    while True:
-        # Read the stream in chunks
-        chunk = stream.read(4096)
-        if not chunk:
-            break
+def read_streamed_audio():
+    response = requests.post('http://localhost:5000/stream_audio', stream=True)
+    if response.status_code == 200:
+        audio_buffer = io.BytesIO()  # Buffer to accumulate audio data
+        start_time = time.time()  # Start time for timing chunks
 
-        # Check for the JPEG start marker (0xFFD8)
-        start_marker = chunk.find(b'\xff\xd8')
-        if start_marker >= 0:
-            # If a start marker is found, append the remaining data from the previous frame
-            frame_data += chunk[:start_marker]
+        for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
+            if chunk:
+                audio_buffer.write(chunk)
 
-            # Process the complete frame
-            frame_image=process_frame(frame_data)
-            all_frame_images.append(frame_image)
+                # Check if it's time to process a chunk
+                if time.time() - start_time >= CHUNK_INTERVAL:
+                    process_audio_chunk(audio_buffer.getvalue())
+                    audio_buffer = io.BytesIO()  # Reset the buffer
+                    start_time = time.time()  # Reset the start time
 
-            # Reset the frame_data and start processing the next frame
-            frame_data = chunk[start_marker:]
-        else:
-            # If no start marker is found, append the data to the frame_data
-            frame_data += chunk
+        # Process any remaining audio data
+        if audio_buffer.tell() > 0:
+            process_audio_chunk(audio_buffer.getvalue())
 
-    # Process the last frame, if any
-    if frame_data:
-        frame_image=process_frame(frame_data)
-        all_frame_images.append(frame_image)
-
-def process_frame(frame_data):
-    frame_bytes = BytesIO(frame_data)
-    frame_image = Image.open(frame_bytes)
-
-    # Convert the image to the format you desire (e.g., RGB)
-    frame_image = frame_image.convert("RGB")
-
-    # Now you can use the frame_image for further processing or display
-    return frame_image
-
-# Make a POST request to the /stream_frames route
-response = requests.post('http://localhost:5000/stream_frames', stream=True)
-
-# Process the streamed frames
-if response.status_code == 200:
-    process_mjpeg_stream(response.raw)
-else:
-    print(f"Error: {response.status_code}")
+    else:
+        print("Failed to stream audio")
