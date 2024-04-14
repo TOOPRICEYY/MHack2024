@@ -125,9 +125,8 @@ def scan_for_uploads():
     picCache = []
     audioCache = []
     while True:
-        th3=Thread(target=call_gemini_lite, args=(list(audioCache), list(picCache), val, event))
+        th3=Thread(target=call_gemini_lite)
         th3.start()
-        th3.join() #TODO IS THIS RIGHT???
         for file in os.listdir(APPDATA):
             #print(audioCache,picCache)
             if file.endswith('.mp3'):
@@ -147,7 +146,7 @@ def scan_for_uploads():
                 th2.join()
                 audioCache = []
                 picCache = []
-                
+        th3.join() #TODO IS THIS RIGHT???
 
 def upload_audio(url,i):
     print(f'{i} Uploading: {url}...')
@@ -212,7 +211,7 @@ def call_gemini(context, currVid=None, currAudio=None):
     return '!!!!!!!!!!!!!!!!!failed to generate response from gemini'
 
 
-def call_gemini_lite(newContext):
+def call_gemini_lite():
     """Call chatbot gemini for interactive Q/A"""
     global textIsComplete
     global textBuffer
