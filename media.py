@@ -89,7 +89,7 @@ def stream_frames():
     audio_path = os.path.join(output_directory, f"audio_{time.time()}.mp3")
     # clip.audio.write_audiofile(audio_path, codec='aac')
 
-
+    
     audio = AudioSegment.from_file(video_path, format="mp4")
     audio.export(audio_path, format="mp3")
     os.remove(video_path_old)
@@ -166,4 +166,4 @@ if __name__ == '__main__':
    
     tr=Thread(target=scan_for_uploads,args=(receivePipe,sendPipe,geminiPipe))
     tr.start()
-    app.run(debug=False, port=5001)#, ssl_context=('cert.pem', 'server.key'))
+    app.run(debug=True, port=5001)#, ssl_context=('cert.pem', 'server.key'))

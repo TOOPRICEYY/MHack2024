@@ -127,12 +127,17 @@ def scan_for_uploads(inq=None, outq=None, geminiPipe=None):
     MAX_PIC = MAX_AUDIO * FRAME_RATE
     picCache = []
     audioCache = []
-    print("running")
+    th3=Thread(target=call_gemini_lite,args=(inq,outq))
+    th3.start()
     while True:
-        th3=Thread(target=call_gemini_lite,args=(inq,outq))
-        th3.start()
-        for file in os.listdir(APPDATA):
-            #print(audioCache,picCache)
+       
+        sleep(1)
+        walker = next(os.walk("/Users/gp/Documents/A Files/Projects/Coding Projects/Hackathons/2024 MHACKS/media_output"))
+        print("running sdfsfsf",walker)
+
+        for file in walker[2]:
+            file = os.path.join(walker[0],file)
+            print("running asd")
             if file.endswith('.mp3'):
                 if (file not in all_uploaded_audios) and (file not in audioCache) and (len(audioCache) < MAX_AUDIO):
                     audioCache.append(file)
@@ -150,7 +155,6 @@ def scan_for_uploads(inq=None, outq=None, geminiPipe=None):
                 th2.join()
                 audioCache = []
                 picCache = []
-        th3.join() #TODO IS THIS RIGHT???
 
 def upload_audio(url,i):
     print(f'{i} Uploading: {url}...')
@@ -174,7 +178,7 @@ def upload_30s(audioCache, picCache,i,event,outq):
         audios.append(upload_audio(file,i))
     for file in mypicCache:
         frames.append(upload_frame(file,i))
-    response = call_gemini(context, frames, audios, prevClips, prevAudio,outq)
+    response = call_gemini(context, frames, audios,outq)
     print(response)
     event.set()
     return  
