@@ -92,7 +92,7 @@ def stream_frames():
     return json.dumps(response)
 
 if __name__ == '__main__':
-    walk = next(os.walk("media_output"))
-    for f in walk[2]:
-        os.remove(os.path.join(walk[0], f))
-    app.run(debug=True, port=5001, threaded=True)
+    walk =  next(os.walk("media_output"))
+    for f in walk[2]: os.remove(os.path.join(walk[0],f))
+    app.run(debug=True, port=5001, threaded=True)#, ssl_context=('cert.pem', 'server.key'))
+    # th = Thread(target = main_call,)
