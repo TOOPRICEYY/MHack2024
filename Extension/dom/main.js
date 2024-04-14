@@ -285,21 +285,21 @@ function addData(chart, label,data, streamIndex) {
     chart.update();
   }
 
-//   setInterval(() => {
-// try{
-//     const randomValue = Math.floor(Math.random()*10)/10.0;
-//     const randomValue2 = Math.floor(Math.random()*10)/10.0;
+  setInterval(() => {
+try{
+    const randomValue = Math.floor(Math.random()*10)/10.0;
+    const randomValue2 = Math.floor(Math.random()*10)/10.0;
 
-//     const currentTime = getCurrentTime();
-//     // updateGraph({ label: currentTime, value: randomValue });
-//     addData(liveGraph,currentTime,randomValue,"Knowledge")
-//     addData(liveGraph,currentTime,randomValue2,"Passion")
+    const currentTime = getCurrentTime();
+    // updateGraph({ label: currentTime, value: randomValue });
+    addData(liveGraph,currentTime,randomValue,"Tension")
+    addData(liveGraph,currentTime,randomValue2,"Excitement")
 
-// }catch (e){
-//     console.log(e);
+}catch (e){
+    console.log(e);
 
-// }
-//   }, 1000);
+}
+  }, 1000);
 async function pollForDataBatch() {
   const currentTime = getCurrentTime(); // Get the current time for labels
   // const newValues = dataStreamCategories.map(() => Math.random()); // Generate random values for each category

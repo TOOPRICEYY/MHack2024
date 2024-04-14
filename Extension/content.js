@@ -33,7 +33,7 @@ function initGui()
   
       console.log("executing script")
 
-    const targetNode = document.querySelector('#yDmH0d');
+    const targetNode = document.querySelector('body');
   
     if (targetNode) {
       // Insert the info box at the top of the main container
