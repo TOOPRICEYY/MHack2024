@@ -1,0 +1,75 @@
+
+<div class="flex flex-col flex-grow overflow-y-hidden mt-4 mr-4 ml-4 pl-4 pr-4" >
+  <div style="z-index: 52;" class="flex w-full h-[200px] bg-white shadow-lg flex flex-row transition-transform duration-300 rounded-lg p-5 flex-grow">
+    <div class="flex-grow">
+      <canvas id="liveLine"></canvas>
+    </div>
+    <div style="padding: 10px; margin-top: -3%;">
+      <canvas style="width: 220px;" id="liveRadar"></canvas>
+    </div>
+
+    <!-- <div >
+      <div class="flex items-center mb-4">
+        <input id="feelingSassy" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+        <label for="feelingSassy" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">I'm feeling sassy</label>
+      </div>
+      <div class="mb-4">
+        <label for="conversationPurpose" class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-400">Conversation Purpose</label>
+        <input id="conversationPurpose" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Enter purpose">
+      </div>
+      <div>
+        <label for="suggestedTopics" class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-400">Suggested Topics</label>
+        <textarea id="suggestedTopics" rows="4" class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Type here..."></textarea>
+      </div>
+    </div>
+  </div> -->
+</div>
+
+
+<div class="flex-row flex" style="justify-content: flex-end;">
+
+  <!-- <div id="summeryWindow" style="z-index: 50;" class="mr-10 transform translate-y-[calc(-1%+70px)] hover:translate-y-[calc(-100%+75px)] w-80 min-h-120 max-h-140 bg-white shadow-lg flex flex-col transition-transform duration-300 rounded-lg">
+    <div class="p-4 bg-blue-500 text-white flex justify-between items-center flex-col">
+      <h1 class="text-lg font-bold">Conversation Summery</h1>
+    </div>
+   
+
+    <div class="p-4 flex justify-end">
+      <button onclick="toggleSummary()" class="bg-blue-700 text-white w-full h-[40px] ml-5 mr-5 rounded hover:bg-blue-800 transition duration-300">Toggle Summary</button>
+    </div>  
+  </div> -->
+
+  <div id="chatWindow" style="z-index: 50; height: 600px;" class="mr-10 overflow-y-scroll transform translate-y-[calc(-100%+70px)] hover:translate-y-[calc(-100%+75px)] w-80 bg-white shadow-lg flex flex-col transition-transform duration-300 rounded-lg">
+    <div class="p-4 bg-blue-500 text-white flex justify-between items-center w-full">
+      <h1 class="text-lg font-bold">Chat with SideKick</h1>
+      <button class="bg-blue-700 px-3 py-1 rounded">Toggle</button>
+    </div>
+    <div class="overflow-y-auto flex-grow p-4" id="messageContainer">
+      <div class="mb-4 p-2 bg-gray-100 rounded">Message 1</div>
+      <div class="mb-4 p-2 bg-gray-100 rounded text-right">Message 2</div>
+      <div class="mb-4 p-2 bg-gray-100 rounded ">Message 3</div>
+      <div class="mb-4 p-2 bg-gray-100 rounded text-right">Message 2</div>
+      <div class="mb-4 p-2 bg-gray-100 rounded ">Message 3</div>
+      <div class="mb-4 p-2 bg-gray-100 rounded text-right">Message 2</div>
+      <div class="mb-4 p-2 bg-gray-100 rounded ">Message 3</div>
+      <div class="mb-4 p-2 bg-gray-100 rounded ">Message 3</div>
+      <div class="mb-4 p-2 bg-gray-100 rounded text-right">Message 2</div>
+      <div class="mb-4 p-2 bg-gray-100 rounded ">Message 3</div>
+
+      <!-- Add more messages here -->
+    </div>
+    <div class="p-4">
+      <input id= "chatInput" type="text" class="border p-2 w-full rounded" placeholder="Chat" >
+      
+      <div id="loading" class="hidden absolute right-7 bottom-7">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+</div>
+
+
+</div>
+
+
+  </div>
