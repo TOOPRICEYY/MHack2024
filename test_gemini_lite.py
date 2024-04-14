@@ -14,7 +14,7 @@ def call_gemini_lite(context, chatInput=None, chatHistory=None):
     # context: summary of what just happened in gemini 1.5
     # chatInput: user's question typed in chat box
     # chatHistory: copy of chat history. the whole prompt.
-    
+
     # Set the model to Gemini 1.5 Pro.
     model = genai.GenerativeModel(model_name="models/gemini-1.0-pro")
 
@@ -40,7 +40,7 @@ while True:
     initial = True
     chat = input('chat box:')
     if initial:
-        newContext = 'I\'m in an interview for the google gemini teamy intereviewer just showed up and greeted me.'
+        newContext = 'I\'m in an interview for the google gemini team n my intereviewer just greeted me'
     else:
         # use gemini 1.5 output here
         newContext = ''
