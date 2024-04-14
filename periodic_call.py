@@ -2,6 +2,7 @@ import os
 from threading import Thread, Event
 from time import sleep
 import google.generativeai as genai
+from queue import Queue
 GOOGLE_API_KEY='AIzaSyD3CTe6s7RIWeQKVfrUaaGVEkteYOa7eKU'
 genai.configure(api_key=GOOGLE_API_KEY)
 # init_prompt = """
@@ -113,19 +114,22 @@ APPDATA = os.path.join('.','media_output')
 
 prevClips = []
 prevAudio = []
+chatQuery = ""
+textIsComplete = False
+textBuffer=''
 
-chatQuery = ''
-def scan_for_uploads():
+def scan_for_uploads(inq=None, outq=None, geminiPipe=None):
     # Upload files that are not on Gemini API yet
     # Keep scanning forever
     BATCH_COUNT = 0
     FRAME_RATE = 5
-    MAX_AUDIO = 6
+    MAX_AUDIO = 1
     MAX_PIC = MAX_AUDIO * FRAME_RATE
     picCache = []
     audioCache = []
+    print("running")
     while True:
-        th3=Thread(target=call_gemini_lite)
+        th3=Thread(target=call_gemini_lite,args=(inq,outq))
         th3.start()
         for file in os.listdir(APPDATA):
             #print(audioCache,picCache)
@@ -139,7 +143,7 @@ def scan_for_uploads():
                 val=BATCH_COUNT
                 event = Event()
                 print(len(audioCache),len(picCache))
-                th2=Thread(target=upload_30s, args=(list(audioCache), list(picCache), val, event))
+                th2=Thread(target=upload_30s, args=(list(audioCache), list(picCache), val, event,geminiPipe))
                 BATCH_COUNT+=1
                 th2.start()
                 event.wait()        
@@ -160,7 +164,7 @@ def upload_frame(url,i):
     all_uploaded_frames[url]=response
     return response
 
-def upload_30s(audioCache, picCache,i,event):
+def upload_30s(audioCache, picCache,i,event,outq):
     # Get Gemini file URLs correpsonding to this batch of files
     frames = []
     audios = []
@@ -170,12 +174,12 @@ def upload_30s(audioCache, picCache,i,event):
         audios.append(upload_audio(file,i))
     for file in mypicCache:
         frames.append(upload_frame(file,i))
-    response = call_gemini(context, frames, audios, prevClips, prevAudio)
+    response = call_gemini(context, frames, audios, prevClips, prevAudio,outq)
     print(response)
     event.set()
     return  
 
-def call_gemini(context, currVid=None, currAudio=None):
+def call_gemini(context, currVid=None, currAudio=None, outq = None):
     model = genai.GenerativeModel(model_name="models/gemini-1.5-pro-latest")
     msg = context[0]
     request = []
@@ -203,6 +207,7 @@ def call_gemini(context, currVid=None, currAudio=None):
             response = model.generate_content(request, request_options={"timeout": 600})
             context.append(contextPackage)
             responses.append(response.text)
+            outq.put(response.text)
             return response.text
         except Exception as e:
             print("ran out!")
@@ -211,7 +216,7 @@ def call_gemini(context, currVid=None, currAudio=None):
     return '!!!!!!!!!!!!!!!!!failed to generate response from gemini'
 
 
-def call_gemini_lite():
+def call_gemini_lite(inq, outq):
     """Call chatbot gemini for interactive Q/A"""
     global textIsComplete
     global textBuffer
@@ -222,27 +227,55 @@ def call_gemini_lite():
 
     # Set the model to Gemini 1.0
     chatHistory = []
+    textIsComplete = False
     model = genai.GenerativeModel(model_name="models/gemini-1.0-pro")
-    chat = input('chat box:')
+    # chat = input('chat box:')
+
     initSize = len(responses)
-    while True:
-        if not (initSize == len(responses)):
-            # Make GenerateContent request with the structure described above.
-            request = chatHistory
-            newContext = responses[-1]
-            request += ('\nNew context: '+ newContext)    
-            request += ('\nQuestion: '+ chatQuery)
-            request = [request]
-            response = model.generate_content(request, request_options={"timeout": 600}, stream=True)
-            textIsComplete = False
-            textBuffer = ''
-            for token in response:
-                print(token.text)
-                textBuffer=textBuffer+token.text
-                print(textBuffer)
-            textIsComplete = True
-            chatQuery = ''
-            chatHistory.append(textBuffer+"\n")
+    try:
+        while True:
+            sleep(.25)
+            chatQuery = outq.get()
+
+            # if(chatQuery!=""):
+            #     print("gemeni lite queried")
+            #     request = chatHistory
+            #     request += ('\nQuestion: '+ chatQuery + '\nAgent Response: ')
+            #     request = request
+            #     print(request)
+            #     response = model.generate_content(request, request_options={"timeout": 600}, stream=True)
+            #     textIsComplete = False
+            #     textBuffer = ''
+            #     for token in response:
+            #         print(token.text)
+            #         textBuffer=textBuffer+token.text
+            #         print(textBuffer)
+            #     textIsComplete = True
+            #     chatHistory.append(textBuffer+"\n")
+            #     inq.put(textBuffer)
+
+                # chatQuery = ""
+            if not (initSize == len(responses)):
+                # Make GenerateContent request with the structure described above.
+                request = chatHistory
+                newContext = responses[-1]
+                request += ('\nNew context: '+ newContext)    
+                request += ('\nQuestion: '+ chatQuery)
+                request = [request]
+                response = model.generate_content(request, request_options={"timeout": 600}, stream=True)
+                textIsComplete = False
+                textBuffer = ''
+                for token in response:
+                    print(token.text)
+                    textBuffer=textBuffer+token.text
+                    print(textBuffer)
+                textIsComplete = True
+                chatQuery = ''
+                chatHistory.append(textBuffer+"\n")
+    except:
+        print("Gemini lite died")
+        call_gemini_lite(inq,outq)
+        textIsComplete = -1
 
 def get_timestamp(url):
     ts = os.path.basename(url)

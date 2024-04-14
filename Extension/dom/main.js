@@ -300,9 +300,30 @@ function addData(chart, label,data, streamIndex) {
 
 // }
 //   }, 1000);
-function addDataBatch() {
+async function pollForDataBatch() {
   const currentTime = getCurrentTime(); // Get the current time for labels
-  const newValues = dataStreamCategories.map(() => Math.random()); // Generate random values for each category
+  // const newValues = dataStreamCategories.map(() => Math.random()); // Generate random values for each category
+  try {
+      const response = await fetch('http://127.0.0.1:5001/get_state_data', {
+          method: 'GET',
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          // body: JSON.stringify({ message:message}) // Example body
+      });
+
+      const data = await response.json();
+      if(data.status = "404") {
+        console.log("no new data")
+        return
+
+      }
+      console.log(data)
+  } catch (error) {
+      console.error('Error:', error);
+      return;
+  }
+
 
   // Update line chart
   if (liveGraph) {
@@ -323,7 +344,7 @@ function addDataBatch() {
 }
 
 // Update charts every second with new data
-setInterval(addDataBatch, 1000);
+// setInterval(pollForDataBatch, 1000);
 
 
 
@@ -352,15 +373,15 @@ setInterval(addDataBatch, 1000);
         input.value = '';
         loading.classList.remove('hidden'); // Show loading
 
-        await timeout(3000)
+        // await timeout(3000)
 
         try {
-            const response = await fetch('http://127.0.0.1/send_text_prompt', {
-                method: 'PUT',
+            const response = await fetch('http://127.0.0.1:5001/send_text_prompt', {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ message}) // Example body
+                body: JSON.stringify({ message:message}) // Example body
             });
 
             const data = await response.json();

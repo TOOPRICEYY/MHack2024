@@ -6,9 +6,9 @@ import google.generativeai as genai
 import google.api_core
 GOOGLE_API_KEY='AIzaSyD3CTe6s7RIWeQKVfrUaaGVEkteYOa7eKU'
 genai.configure(api_key=GOOGLE_API_KEY)
-textBuffer=''
-textIsComplete=False
-from media import chatQuery
+# textBuffer=''
+# textIsComplete=False
+# from media import chatQuery
 
 prompt = '[ur prompt here]'
 

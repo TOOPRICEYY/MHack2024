@@ -10,16 +10,21 @@ import subprocess
 from pydub import AudioSegment
 import numpy as np
 import imageio
-from periodic_call import scan_for_uploads
+from periodic_call import scan_for_uploads, chatQuery, textIsComplete, textBuffer, responses
 from threading import Thread
+import queue
 
 
-chatQuery = ""
 app = Flask(__name__)
 CORS(app)
 
 output_directory = 'media_output'
 os.makedirs(output_directory, exist_ok=True)  # Ensure the output directory exists
+
+sendPipe = queue.Queue()
+receivePipe = queue.Queue()
+geminiPipe = queue.Queue()
+
 
 def transcode_video(input_path, output_path):
     command = [
@@ -99,16 +104,66 @@ def stream_frames():
 
 @app.route('/send_text_prompt', methods=['POST'])
 def send_text_prompt():
+    global textIsComplete
     global chatQuery
-    chatQuery = request.get_data()
-    return "sending chat...." , 200
+    global textBuffer
+
+    chatQuery = json.loads(request.get_data())["message"]
+    # print(chatQuery)
+    receivePipe.put(chatQuery)
+    textIsComplete
+    response = sendPipe.get()
+    # if(textIsComplete==-1): return json.dumps({"response":"Gemini Api Error"})
+    
+    return json.dumps({"response":response})
+
+@app.route('/get_state_data', methods=['GET'])
+def get_state_data():
+    data = None
+    try: data = geminiPipe.get(timeout=30)
+        
+    except:  return json.dumps({"response":{"status":"404"}})
+
+    print(data)
+
+    if(data==None): return json.dumps({"response":{"status":"404"}})
+    return json.dumps({"response":{data}})
 
 
+import threading
+import atexit
+import ctypes
 
+def kill_thread(thread):
+    """Terminate a python thread from another thread."""
+    if not thread.is_alive():
+        return
 
+    # Get a handle to the thread's underlying native thread object
+    thread_id = thread.native_id
+
+    # Call the appropriate OS-specific function to terminate the thread
+    if ctypes.windll:
+        process = ctypes.windll.kernel32.TerminateThread(thread_id, 0)
+    else:
+        process = ctypes.cdll.LoadLibrary("libc.so.6")
+        process.pthread_cancel(thread_id)
+
+def exit_handler():
+    """Clean up handler to kill all running threads."""
+    threads = threading.enumerate()
+    for thread in threads:
+        if thread != threading.current_thread():
+            print(f"Terminating thread: {thread.name}")
+            kill_thread(thread)
+
+# Register the exit handler
+
+atexit.register(exit_handler)
 if __name__ == '__main__':
     walk =  next(os.walk("media_output"))
     for f in walk[2]: os.remove(os.path.join(walk[0],f))
-    tr=Thread(target=scan_for_uploads)
+   
+    tr=Thread(target=scan_for_uploads,args=(receivePipe,sendPipe,geminiPipe))
     tr.start()
     app.run(debug=False, port=5001)#, ssl_context=('cert.pem', 'server.key'))
