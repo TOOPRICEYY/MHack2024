@@ -32,13 +32,19 @@ function inspectTracks(mediaStream) {
     });
 }
 
-async function captureAndCombineAudio(streamId) {
+async function captureAndCombineMedia(streamId) {
     try {
-        // Create a new audio context
+        // Create a new audio context for processing audio
         const audioContext = new AudioContext();
 
-        // Get the media streams
-        const tabStream = await navigator.mediaDevices.getUserMedia({
+        // Get the tab's media including video and audio
+        const tabMedia = await navigator.mediaDevices.getUserMedia({
+            video: {
+                mandatory: {
+                    chromeMediaSource: 'tab',
+                    chromeMediaSourceId: streamId
+                }
+            },
             audio: {
                 mandatory: {
                     chromeMediaSource: 'tab',
@@ -46,86 +52,100 @@ async function captureAndCombineAudio(streamId) {
                 }
             }
         });
-        const micStream = await navigator.mediaDevices.getUserMedia({
-            audio: true
-        });
 
-        // Create source nodes from the streams
-        const tabSource = audioContext.createMediaStreamSource(tabStream);
-        const micSource = audioContext.createMediaStreamSource(micStream);
+        // Get the microphone's audio
+        const micMedia = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-        // Create a ChannelMergerNode to combine the two audio sources into one
+        // Create source nodes for the tab and microphone audio
+        const tabAudioSource = audioContext.createMediaStreamSource(tabMedia);
+        const micAudioSource = audioContext.createMediaStreamSource(micMedia);
+
+        // Merge the audio sources into a single mono channel
         const merger = audioContext.createChannelMerger(2);
+        tabAudioSource.connect(merger, 0, 0);
+        micAudioSource.connect(merger, 0, 0);
 
-        // Connect both sources to the merger
-        // Since we want mono output, we connect both inputs to the same channel (channel 0)
-        tabSource.connect(merger, 0, 0);
-        micSource.connect(merger, 0, 0);
-
-        // Optional: Use a ChannelSplitterNode to discard one channel if necessary
-        const splitter = audioContext.createChannelSplitter(2);
-        merger.connect(splitter);
+        const monoChannel = audioContext.createChannelSplitter(2);
+        merger.connect(monoChannel);
         const monoOutput = audioContext.createGain();
-        splitter.connect(monoOutput, 0); // Connect only the first channel for mono
+        monoChannel.connect(monoOutput, 0);  // Connect only one channel for mono output
 
-        // Connect the output to the destination to play out the speakers (for testing)
-        monoOutput.connect(audioContext.destination);
+        // Create a destination node to output the processed audio stream
+        const destination = audioContext.createMediaStreamDestination();
+        monoOutput.connect(destination);
 
-        // Also, create a MediaStream from the output for further use, such as sending to a server
-        const outputStream = monoOutput.stream || audioContext.createMediaStreamDestination().stream;
+        // Combine the processed audio with the tab's video
+        const combinedStream = new MediaStream([
+            ...tabMedia.getVideoTracks(),  // Include the video track from the tab
+            ...destination.stream.getAudioTracks()  // Include the combined mono audio track
+        ]);
 
-        return outputStream;
+        return combinedStream;
     } catch (error) {
-        console.error('Error processing audio:', error);
+        console.error('Error capturing and processing media:', error);
     }
 }
 
 
-function captureAndStreamMedia(streamId) {
+
+async function captureAndStreamMedia(streamId) {
     // First, get the tab's media.
-    navigator.mediaDevices.getUserMedia({
-        video: {
-            mandatory: {
-                chromeMediaSource: 'tab',
-                chromeMediaSourceId: streamId
-            }
-        },
-        audio: {
-            mandatory: {
-                chromeMediaSource: 'tab',
-                chromeMediaSourceId: streamId
-            }
-        }
-    }).then(tabStream => {
-        console.log("Tab media stream captured.");
-        inspectTracks(tabStream);
+    const stream = await captureAndCombineMedia(streamId);
+    // const audioTracks = audioStream();
+    // const combinedStream = new MediaStream([
+    //     // ...tabStream.getVideoTracks(),  // Tab's video track
+    //     ...audioTracks
+    //     // ...tabStream.getAudioTracks(),  // Tab's audio track
+    //     // ...micStream.getAudioTracks()  // Microphone's audio track
+    // ]);
+    inspectTracks(stream);  // Inspect the combined stream tracks
+    streamToServer(stream, 'http://127.0.0.1:5001/stream_frames');
 
-        // Now, get the microphone's media.
-        navigator.mediaDevices.getUserMedia({
-            audio: true // Default audio source (microphone)
-        }).then(micStream => {
-            console.log("Microphone media stream captured.");
-            inspectTracks(micStream);
 
-            // Combine the audio tracks from both the tab and the microphone.
-            
-            const combinedStream = new MediaStream([
-                ...tabStream.getVideoTracks(),  // Tab's video track
-                ...micStream.getAudioTracks(),  // Microphone's audio track
-                ...tabStream.getAudioTracks()  // Tab's audio track
-            ]);
+    // navigator.mediaDevices.getUserMedia({
+    //     video: {
+    //         mandatory: {
+    //             chromeMediaSource: 'tab',
+    //             chromeMediaSourceId: streamId
+    //         }
+    //     },
+    //     // audio: {
+    //     //     mandatory: {
+    //     //         chromeMediaSource: 'tab',
+    //     //         chromeMediaSourceId: streamId
+    //     //     }
+    //     // }
+    // }).then(tabStream => {
+    //     console.log("Tab media stream captured.");
+    //     inspectTracks(tabStream);
 
-            console.log("Combined stream tracks:");
-            inspectTracks(combinedStream);  // Inspect the combined stream tracks
+    //     // Now, get the microphone's media.
+       
 
-            // Pass the combined stream for recording and streaming.
-            streamToServer(combinedStream, 'http://127.0.0.1:5001/stream_frames', 'http://127.0.0.1:5001/stream_audio');
-        }).catch(error => {
-            console.error("Error capturing microphone media:", error);
-        });
-    }).catch(error => {
-        console.error("Error capturing tab media:", error);
-    });
+    //     // Combine the audio tracks from both the tab and the microphone.
+
+    //     // Get audio tracks from the combined audio stream
+    //     // const audioTracks = audioStream.getAudioTracks();
+    //     const combinedStream = new MediaStream([
+    //         ...tabStream.getVideoTracks(),  // Tab's video track
+    //         ...audioTracks
+    //         // ...tabStream.getAudioTracks(),  // Tab's audio track
+    //         // ...micStream.getAudioTracks()  // Microphone's audio track
+    //     ]);
+
+    //     console.log("Combined stream tracks:");
+    //     inspectTracks(combinedStream);  // Inspect the combined stream tracks
+
+    //     // Pass the combined stream for recording and streaming.
+    //     streamToServer(combinedStream, 'http://127.0.0.1:5001/stream_frames');
+        
+    //     // .catch(error => {
+    //     //     console.error("Error capturing microphone media:", error);
+    //     // });
+    // })
+    //.catch(error => {
+    //     console.error("Error capturing tab media:", error);
+    // });
 }
 
 
