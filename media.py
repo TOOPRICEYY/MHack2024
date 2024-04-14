@@ -10,7 +10,8 @@ import subprocess
 from pydub import AudioSegment
 import numpy as np
 import imageio
-
+from periodic_call import scan_for_uploads
+from threading import Thread
 
 app = Flask(__name__)
 CORS(app)
@@ -21,6 +22,7 @@ os.makedirs(output_directory, exist_ok=True)  # Ensure the output directory exis
 def transcode_video(input_path, output_path):
     command = [
         'ffmpeg',
+        '-loglevel', 'quiet',
         '-i', input_path,
         '-r','3',
         '-c:v', 'libx264', 
@@ -84,7 +86,6 @@ def stream_frames():
     audio = AudioSegment.from_file(video_path, format="mp4")
     audio.export(audio_path, format="mp3")
 
-
     response = {
         "frames": frames,
         "audio": audio_path
@@ -94,5 +95,6 @@ def stream_frames():
 if __name__ == '__main__':
     walk =  next(os.walk("media_output"))
     for f in walk[2]: os.remove(os.path.join(walk[0],f))
-    app.run(debug=True, port=5001, threaded=True)#, ssl_context=('cert.pem', 'server.key'))
-    # th = Thread(target = main_call,)
+    tr=Thread(target=scan_for_uploads)
+    tr.start()
+    app.run(debug=False, port=5001)#, ssl_context=('cert.pem', 'server.key'))

@@ -1,8 +1,9 @@
 from mutagen.mp3 import MP3
 import os
-from threading import Thread
+from threading import Thread, Event
 from time import sleep
 import google.generativeai as genai
+import google.api_core
 GOOGLE_API_KEY='AIzaSyD3CTe6s7RIWeQKVfrUaaGVEkteYOa7eKU'
 genai.configure(api_key=GOOGLE_API_KEY)
 init_prompt = """
@@ -34,35 +35,39 @@ APPDATA = os.path.join('.','media_output')
 
 prevClips = []
 prevAudio = []
-
+threadCount = 0
 
 def scan_for_uploads():
     # Upload files that are not on Gemini API yet
     # Keep scanning forever
+    print(f"Launching Thread {threadCount}")
     BATCH_COUNT = 0
-    FRAME_RATE = 1
+    FRAME_RATE = 5
     MAX_AUDIO = 6
     MAX_PIC = MAX_AUDIO * FRAME_RATE
     picCache = []
     audioCache = []
     while True:
         for file in os.listdir(APPDATA):
+            # print(audioCache,picCache)
             if file.endswith('.mp3'):
                 if (file not in all_uploaded_audios) and (file not in audioCache) and (len(audioCache) < MAX_AUDIO):
                     audioCache.append(file)
-            else:
+            elif file.endswith('.jpg'):
                 if (file not in all_uploaded_frames) and (file not in picCache) and (len(picCache) < MAX_PIC):
                     picCache.append(file)
             if ((len(audioCache) == MAX_AUDIO) and (len(picCache) == MAX_PIC)):
                 val=BATCH_COUNT
-                th2=Thread(target=upload_30s, args=(audioCache, picCache, val))
+                event = Event()
+                print(len(audioCache),len(picCache))
+                th2=Thread(target=upload_30s, args=(list(audioCache), list(picCache), val, event))
                 BATCH_COUNT+=1
                 th2.start()
+                event.wait()        
                 th2.join()
                 audioCache = []
                 picCache = []
-                print(all_uploaded_frames)
-        sleep(1)
+                
 
 def upload_audio(url,i):
     print(f'{i} Uploading: {url}...')
@@ -76,21 +81,19 @@ def upload_frame(url,i):
     all_uploaded_frames[url]=response
     return response
 
-def upload_30s(audioCache, picCache,i):
+def upload_30s(audioCache, picCache,i,event):
     # Get Gemini file URLs correpsonding to this batch of files
     frames = []
     audios = []
-    picCache = sorted(picCache,key=get_timestamp)
-    audioCache = sorted(audioCache,key=get_timestamp)
-    for file in audioCache:
+    mypicCache = sorted(picCache,key=get_timestamp)
+    myaudioCache = sorted(audioCache,key=get_timestamp)
+    for file in myaudioCache:
         audios.append(upload_audio(file,i))
-    for file in picCache:
+    for file in mypicCache:
         frames.append(upload_frame(file,i))
-    #frames = [all_uploaded_frames[url] for url in match_video(audioCache)]
-    #audios = [all_uploaded_audios[url] for url in audioCache]
     response = call_gemini(context, frames, audios, prevClips, prevAudio)
     print(response)
-    sleep(30)
+    event.set()
     return
 
 def call_gemini(context, currVid=None, currAudio=None, prevClips=None, prevAudio=None):
@@ -112,8 +115,17 @@ def call_gemini(context, currVid=None, currAudio=None, prevClips=None, prevAudio
         request+=prevAudio
     prevClips+=currVid
     prevAudio+=currAudio
-    response = model.generate_content(request, request_options={"timeout": 600})
-    return response.text
+    response = None
+    tries = 0
+    while tries<5:
+        try:
+            response = model.generate_content(request, request_options={"timeout": 600})
+            return response.text
+        except Exception as e:
+            print("ran out!")
+            sleep(10)
+            tries+=1
+    return '!!!!!!!!!!!!!!!!!failed to generate response from gemini'
 
 def get_audio_duration(url):
     audio = MP3(url)
@@ -129,11 +141,3 @@ def get_timestamp(url):
     ts = os.path.basename(url)
     # ts = os.path.getmtime(url)
     return ts
-
-def main_thread():
-    th1=Thread(target=scan_for_uploads)
-    th1.start()
-
-tr=Thread(target=main_thread)
-tr.start()
-tr.join(timeout=40)
