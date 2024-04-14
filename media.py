@@ -85,8 +85,8 @@ def stream_frames():
 
     audio = AudioSegment.from_file(video_path, format="mp4")
     audio.export(audio_path, format="mp3")
-    # os.remove(video_path_old)
-    # os.remove(video_path)
+    os.remove(video_path_old)
+    os.remove(video_path)
 
     response = {
         "frames": frames,
