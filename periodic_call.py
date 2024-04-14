@@ -133,11 +133,11 @@ def scan_for_uploads(inq=None, outq=None, geminiPipe=None):
        
         sleep(1)
         walker = next(os.walk("/Users/gp/Documents/A Files/Projects/Coding Projects/Hackathons/2024 MHACKS/media_output"))
-        print("running sdfsfsf",walker)
+        # print("running sdfsfsf",walker)
 
         for file in walker[2]:
             file = os.path.join(walker[0],file)
-            print("running asd")
+            # print("running asd")
             if file.endswith('.mp3'):
                 if (file not in all_uploaded_audios) and (file not in audioCache) and (len(audioCache) < MAX_AUDIO):
                     audioCache.append(file)

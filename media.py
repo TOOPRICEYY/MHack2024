@@ -104,30 +104,46 @@ def stream_frames():
 
 @app.route('/send_text_prompt', methods=['POST'])
 def send_text_prompt():
-    global textIsComplete
-    global chatQuery
-    global textBuffer
+    # global textIsComplete
+    # global chatQuery
+    # global textBuffer
 
-    chatQuery = json.loads(request.get_data())["message"]
-    # print(chatQuery)
-    receivePipe.put(chatQuery)
-    textIsComplete
-    response = sendPipe.get()
-    # if(textIsComplete==-1): return json.dumps({"response":"Gemini Api Error"})
-    
-    return json.dumps({"response":response})
-
-@app.route('/get_state_data', methods=['GET'])
-def get_state_data():
+    # chatQuery = json.loads(request.get_data())["message"]
+    # # print(chatQuery)
+    # receivePipe.put(chatQuery)
+    # textIsComplete
+    # response = sendPipe.get()
+    # # if(textIsComplete==-1): return json.dumps({"response":"Gemini Api Error"})
     data = None
     try: data = geminiPipe.get(timeout=30)
+    except: return json.dumps({"response":"null"})
+    return json.dumps({"response":data})
+
+dataStage = None
+@app.route('/get_state_data', methods=['GET'])
+def get_state_data():
+    # return json.dumps({"status":"200","response":{'joy\":': 0.5, 'sadness\":': 0.5, 'anger\":': 0.5, 'fear\":': 0.5, 'disgust\":': 0.5, 'surprise\":': 0.5}})
+    try: data = geminiPipe.get(timeout=5)
         
     except:  return json.dumps({"response":{"status":"404"}})
 
-    print(data)
+    # print(data)
+    print("\n\n\n\n")
 
+    emotions = ['joy":', 'sadness":', 'anger":', 'fear":', 'disgust":', 'surprise":']
+    fullstr = data
+    output = {x:.5 for x in emotions}
+    for x in emotions:
+        try: index = fullstr.lower().index(x)
+        except: continue
+        if(index!=-1): 
+            print("'"+fullstr[len(x)+index+1:len(x)+index+4]+"'")
+            try: output[x] = float(fullstr[len(x)+index+1:len(x)+index+4])
+            except: pass
+
+    print(output)
     if(data==None): return json.dumps({"response":{"status":"404"}})
-    return json.dumps({"response":{data}})
+    return json.dumps({"response":output})
 
 
 import threading

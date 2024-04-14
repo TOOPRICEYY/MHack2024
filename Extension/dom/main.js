@@ -25,7 +25,7 @@ chatEle.addEventListener('blur',  ()=>{
 var liveGraph = null
 var liveRadar = null
 
-dataStreamCategories = ["Tension","Excitement","Professionalism","Solumn"]
+dataStreamCategories = ['joy\":', 'sadness\":', 'anger\":', 'fear\":', 'disgust\":', 'surprise\":']
 
 try{
 setTimeout(()=>{
@@ -273,7 +273,6 @@ function getCurrentTime() {
     return `${hours}:${minutes}:${seconds}`;
 }
 
-console.log(getCurrentTime()); // Outputs time in HH:MM format
 
 function addData(chart, label,data, streamIndex) {
 
@@ -285,22 +284,23 @@ function addData(chart, label,data, streamIndex) {
     chart.update();
   }
 
-  setInterval(() => {
-try{
-    const randomValue = Math.floor(Math.random()*10)/10.0;
-    const randomValue2 = Math.floor(Math.random()*10)/10.0;
+//   setInterval(() => {
+// try{
+//     const randomValue = Math.floor(Math.random()*10)/10.0;
+//     const randomValue2 = Math.floor(Math.random()*10)/10.0;
 
-    const currentTime = getCurrentTime();
-    // updateGraph({ label: currentTime, value: randomValue });
-    addData(liveGraph,currentTime,randomValue,"Tension")
-    addData(liveGraph,currentTime,randomValue2,"Excitement")
+//     const currentTime = getCurrentTime();
+//     // updateGraph({ label: currentTime, value: randomValue });
+//     addData(liveGraph,currentTime,randomValue,"Tension")
+//     addData(liveGraph,currentTime,randomValue2,"Excitement")
 
-}catch (e){
-    console.log(e);
+// }catch (e){
+//     console.log(e);
 
-}
-  }, 1000);
+// }
+//   }, 1000);
 async function pollForDataBatch() {
+  let data = null
   const currentTime = getCurrentTime(); // Get the current time for labels
   // const newValues = dataStreamCategories.map(() => Math.random()); // Generate random values for each category
   try {
@@ -311,9 +311,11 @@ async function pollForDataBatch() {
           },
           // body: JSON.stringify({ message:message}) // Example body
       });
+      data = await response.json();
+      data = data["response"]
+      console.log(data)
 
-      const data = await response.json();
-      if(data.status = "404") {
+      if(data = "404") {
         console.log("no new data")
         return
 
@@ -324,12 +326,16 @@ async function pollForDataBatch() {
       return;
   }
 
+  newValues = data
+  console.log(newValues)
+  console.log(getCurrentTime()); // Outputs time in HH:MM format
 
   // Update line chart
   if (liveGraph) {
     liveGraph.data.labels.push(currentTime); // Add the current time as a new label
     liveGraph.data.datasets.forEach((dataset, index) => {
-      dataset.data.push(newValues[index]); // Push new values to each dataset
+      console.log(index)
+      dataset.data.push(newValues[dataStreamCategories[index]]); // Push new values to each dataset
     });
     liveGraph.update();
   }
@@ -344,7 +350,7 @@ async function pollForDataBatch() {
 }
 
 // Update charts every second with new data
-// setInterval(pollForDataBatch, 1000);
+setInterval(pollForDataBatch, 1000);
 
 
 
