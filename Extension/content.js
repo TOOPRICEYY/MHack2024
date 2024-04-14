@@ -54,7 +54,7 @@ function captureAndStreamMedia(streamId) {
         streamToServer(stream, 'http://127.0.0.1:5001/stream_frames', 'http://127.0.0.1:5001/stream_audio');
     })
 }
-
+delay = 5000
 function streamToServer(mediaStream, videoUrl, audioUrl) {
 
     // try {
@@ -88,12 +88,12 @@ function streamToServer(mediaStream, videoUrl, audioUrl) {
             // saveToFile(new Blob(chunks),"file.webm")
             chunks = []
             videoRecorder.start(); // Collect data for 5.5 seconds per blob
-            setTimeout(() => {videoRecorder.stop(); console.log("killed video recorder")}, 5000);
+            setTimeout(() => {videoRecorder.stop(); console.log("killed video recorder")}, delay);
             });
         }
-        videoRecorder.start(); // Collect data for 5.5 seconds per blob
+        videoRecorder.start(3000); // Collect data for 5.5 seconds per blob
 
-        setTimeout(() => {videoRecorder.stop(); console.log("killed video recorder")}, 5000);
+        setTimeout(() => {videoRecorder.stop(); console.log("killed video recorder")}, delay);
 
         
 
