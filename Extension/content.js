@@ -88,12 +88,12 @@ function streamToServer(mediaStream, videoUrl, audioUrl) {
             // saveToFile(new Blob(chunks),"file.webm")
             chunks = []
             videoRecorder.start(); // Collect data for 5.5 seconds per blob
-            setTimeout(() => { videoRecorder.stop(); console.log("killed video recorder") }, 500);
+            setTimeout(() => { videoRecorder.stop(); console.log("killed video recorder") }, 5000);
         });
     }
     videoRecorder.start(); // Collect data for 5.5 seconds per blob
 
-    setTimeout(() => { videoRecorder.stop(); console.log("killed video recorder") }, 500);
+    setTimeout(() => { videoRecorder.stop(); console.log("killed video recorder") }, 5000);
 
 
 

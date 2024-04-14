@@ -41,7 +41,7 @@ def scan_for_uploads():
     # Keep scanning forever
     BATCH_COUNT = 0
     FRAME_RATE = 1
-    MAX_AUDIO = 2
+    MAX_AUDIO = 6
     MAX_PIC = MAX_AUDIO * FRAME_RATE
     picCache = []
     audioCache = []
