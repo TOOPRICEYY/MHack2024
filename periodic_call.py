@@ -1,9 +1,7 @@
-from mutagen.mp3 import MP3
 import os
 from threading import Thread, Event
 from time import sleep
 import google.generativeai as genai
-import google.api_core
 GOOGLE_API_KEY='AIzaSyD3CTe6s7RIWeQKVfrUaaGVEkteYOa7eKU'
 genai.configure(api_key=GOOGLE_API_KEY)
 init_prompt = """
@@ -35,12 +33,14 @@ APPDATA = os.path.join('.','media_output')
 
 prevClips = []
 prevAudio = []
-threadCount = 0
+
+textBuffer=''
+textIsComplete=False
+from media import chatQuery
 
 def scan_for_uploads():
     # Upload files that are not on Gemini API yet
     # Keep scanning forever
-    print(f"Launching Thread {threadCount}")
     BATCH_COUNT = 0
     FRAME_RATE = 5
     MAX_AUDIO = 6
@@ -94,9 +94,10 @@ def upload_30s(audioCache, picCache,i,event):
     response = call_gemini(context, frames, audios, prevClips, prevAudio)
     print(response)
     event.set()
-    return
+    return  
 
 def call_gemini(context, currVid=None, currAudio=None, prevClips=None, prevAudio=None):
+    """Main API call"""
     # Set the model to Gemini 1.5 Pro.
     model = genai.GenerativeModel(model_name="models/gemini-1.5-pro-latest")
 
@@ -127,15 +128,35 @@ def call_gemini(context, currVid=None, currAudio=None, prevClips=None, prevAudio
             tries+=1
     return '!!!!!!!!!!!!!!!!!failed to generate response from gemini'
 
-def get_audio_duration(url):
-    audio = MP3(url)
-    duration_seconds = audio.info.length
-    return duration_seconds
 
-def get_time_frame(sorted_urls):
-    start_time = os.path.getmtime(sorted_urls[0])
-    end_time = os.path.getmtime(sorted_urls[-1])+get_audio_duration(sorted_urls[-1])
-    return start_time,end_time
+def call_gemini_lite(newContext, chatHistory=None):
+    """Call chatbot gemini for interactive Q/A"""
+    global textIsComplete
+    global textBuffer
+    global chatQuery
+    # newContext: summary of what just happened in gemini 1.5
+    # chatQuery: user's question typed in chat box
+    # chatHistory: copy of chat history. the whole prompt.
+
+    # Set the model to Gemini 1.5 Pro.
+    model = genai.GenerativeModel(model_name="models/gemini-1.0-pro")
+
+    # Make GenerateContent request with the structure described above.
+    request = chatHistory
+    request += ('\nNew context: '+newContext)    
+    request += ('\nQuestion: '+chatQuery)
+    request = [request]
+    response = model.generate_content(request, request_options={"timeout": 600}, stream=True)
+    textIsComplete = False
+    textBuffer = ''
+    for token in response:
+        print(token.text)
+        textBuffer=textBuffer+token.text
+        print(textBuffer)
+    textIsComplete = True
+    chatQuery = ''
+    chatHistory += (textBuffer+"\n")
+    return chatHistory
 
 def get_timestamp(url):
     ts = os.path.basename(url)
