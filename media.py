@@ -72,7 +72,7 @@ def stream_frames():
     for i, t in enumerate(frame_times):
         frame = clip.get_frame(t)
         frame_path = os.path.join(output_directory, f'frame_{time.time() + i}.jpg')
-        frame = 1 - frame
+        frame = 0 - frame
         img = Image.fromarray((255 * frame).astype(np.uint8))
         img.save(frame_path)
         frames.append(frame_path)
@@ -83,6 +83,8 @@ def stream_frames():
 
     audio = AudioSegment.from_file(video_path, format="mp4")
     audio.export(audio_path, format="mp3")
+    # os.remove(video_path_old)
+    # os.remove(video_path)
 
 
     response = {
