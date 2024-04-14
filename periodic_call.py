@@ -39,27 +39,28 @@ prevAudio = []
 def scan_for_uploads():
     # Upload files that are not on Gemini API yet
     # Keep scanning forever
-    BATCH_COUNT =0
+    BATCH_COUNT = 0
+    FRAME_RATE = 1
+    MAX_AUDIO = 2
+    MAX_PIC = MAX_AUDIO * FRAME_RATE
     picCache = []
     audioCache = []
     while True:
         for file in os.listdir(APPDATA):
             if file.endswith('.mp3'):
-                if (file not in all_uploaded_audios) and (file not in audioCache) and (len(audioCache) < 6):
+                if (file not in all_uploaded_audios) and (file not in audioCache) and (len(audioCache) < MAX_AUDIO):
                     audioCache.append(file)
-                    print("hi audio")
             else:
-                if (file not in all_uploaded_frames) and (file not in picCache) and (len(picCache) < 30):
+                if (file not in all_uploaded_frames) and (file not in picCache) and (len(picCache) < MAX_PIC):
                     picCache.append(file)
-                    print("hi")
-            if ((len(audioCache) == 6) and (len(picCache) == 10)):
-                print()
+            if ((len(audioCache) == MAX_AUDIO) and (len(picCache) == MAX_PIC)):
                 val=BATCH_COUNT
                 th2=Thread(target=upload_30s, args=(audioCache, picCache, val))
                 BATCH_COUNT+=1
                 print(BATCH_COUNT)
                 th2.start()
                 th2.join()
+                print('hi')
                 audioCache = []
                 picCache = []
                 print(all_uploaded_frames)
@@ -91,6 +92,7 @@ def upload_30s(audioCache, picCache,i):
     #audios = [all_uploaded_audios[url] for url in audioCache]
     response = call_gemini(context, frames, audios, prevClips, prevAudio)
     print(response)
+    sleep(30)
     return
 
 def call_gemini(context, currVid=None, currAudio=None, prevClips=None, prevAudio=None):
