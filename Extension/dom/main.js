@@ -332,6 +332,7 @@ async function pollForDataBatch() {
 
   // Update line chart
   if (liveGraph) {
+    
     liveGraph.data.labels.push(currentTime); // Add the current time as a new label
     liveGraph.data.datasets.forEach((dataset, index) => {
       console.log(index)
@@ -342,10 +343,12 @@ async function pollForDataBatch() {
 
   // Update radar chart with only the latest values
   if (liveRadar) {
-    liveRadar.data.datasets.forEach((dataset, index) => {
-      dataset.data = newValues; // Update the entire data array with new values
-    });
+    liveRadar.data.datasets[0].data = dataStreamCategories.map(category => newValues[category]); // Update the data array with new values
     liveRadar.update();
+    // liveRadar.data.datasets.forEach((dataset, index) => {
+    //   dataset.data = newValues[dataStreamCategories[index]]; // Update the entire data array with new values
+    // });
+    // liveRadar.update();
   }
 }
 
