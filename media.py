@@ -123,7 +123,7 @@ dataStage = None
 @app.route('/get_state_data', methods=['GET'])
 def get_state_data():
     # return json.dumps({"status":"200","response":{'joy\":': 0.5, 'sadness\":': 0.5, 'anger\":': 0.5, 'fear\":': 0.5, 'disgust\":': 0.5, 'surprise\":': 0.5}})
-    try: data = geminiPipe.get(timeout=5)
+    try: data = geminiPipe.get(timeout=220)
         
     except:  return json.dumps({"response":{"status":"404"}})
 
@@ -138,7 +138,7 @@ def get_state_data():
         except: continue
         if(index!=-1): 
             print("'"+fullstr[len(x)+index+1:len(x)+index+4]+"'")
-            try: output[x] = float(fullstr[len(x)+index+1:len(x)+index+4])
+            try: output[x] = float(fullstr[len(x)+index+1:len(x)+index+4])/10
             except: pass
 
     print(output)

@@ -315,12 +315,12 @@ async function pollForDataBatch() {
       data = data["response"]
       console.log(data)
 
-      if(data = "404") {
-        console.log("no new data")
-        return
+      // if(data = "404") {
+      //   console.log("no new data")
+      //   return
 
-      }
-      console.log(data)
+      // }
+      // console.log(data)
   } catch (error) {
       console.error('Error:', error);
       return;
