@@ -13,6 +13,8 @@ import imageio
 from periodic_call import scan_for_uploads
 from threading import Thread
 
+
+chatQuery = ""
 app = Flask(__name__)
 CORS(app)
 
@@ -93,6 +95,16 @@ def stream_frames():
         "audio": audio_path
     }
     return json.dumps(response)
+
+
+@app.route('/send_text_prompt', methods=['POST'])
+def send_text_prompt():
+    global chatQuery
+    chatQuery = request.get_data()
+    return "sending chat...." , 200
+
+
+
 
 if __name__ == '__main__':
     walk =  next(os.walk("media_output"))

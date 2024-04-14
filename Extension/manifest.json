@@ -12,6 +12,13 @@
         "default_title": "tab capture test",
         "default_popup": "popup.html"
     },
+    
+    "web_accessible_resources": [
+        {
+          "resources": ["dom/*"],
+          "matches": ["https://meet.google.com/*"]
+        }
+      ],
     "background": {
         "service_worker": "background.js"
     },

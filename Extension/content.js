@@ -2,7 +2,7 @@ let tabId;
 
 // Initialize the extension's functionality once the document is ready
 if (document.readyState !== 'loading') {
-    console.log('Document is ready woo');
+    // console.log('Document is ready woo');
     myInitCode();
 } else {
     document.addEventListener('DOMContentLoaded', function () {
@@ -15,9 +15,8 @@ function myInitCode() {
     // Request the active tab ID from the background script
     chrome.runtime.sendMessage({ command: 'query-active-tab' }, (response) => {
         tabId = response.id;
-        console.log("Querying tab");
+        // console.log("Querying tab");
     });
-    console.log("Past tab query");
 
     // Listener for messages from the background script
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -25,13 +24,58 @@ function myInitCode() {
         captureAndStreamMedia(request.streamId);
     });
     console.log("On to media query");
+    initGui();
 }
+function initGui()
+
+{
+
+  
+      console.log("executing script")
+
+    const targetNode = document.querySelector('#yDmH0d');
+  
+    if (targetNode) {
+      // Insert the info box at the top of the main container
+      const htmlFileUrl = chrome.runtime.getURL('dom/elements.html');
+      console.log(htmlFileUrl)
+      fetch(htmlFileUrl)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const infoBox = doc.body.firstChild;
+                targetNode.insertBefore(infoBox, targetNode.firstChild);
+
+                const cssLink = document.createElement('link');
+                cssLink.href = chrome.runtime.getURL('dom/main.css');
+                cssLink.rel = 'stylesheet';
+                document.head.appendChild(cssLink);
+
+                // After CSS is inserted, load JS
+                const scriptTag = document.createElement('script');
+                scriptTag.src = chrome.runtime.getURL('dom/chart.js');
+                document.body.appendChild(scriptTag);
+                
+
+                const scriptTag2 = document.createElement('script');
+                scriptTag2.src = chrome.runtime.getURL('dom/main.js');
+                document.body.appendChild(scriptTag2);
+                
+                
+            })
+        
+    //   targetNode.insertBefore(infoBox, targetNode.firstChild);
+  
+    }
+
+}
+
 function inspectTracks(mediaStream) {
     mediaStream.getTracks().forEach(track => {
         console.log(`Track kind: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`);
     });
 }
-
 async function captureAndCombineMedia(streamId) {
     try {
         // Create a new audio context for processing audio
@@ -86,6 +130,14 @@ async function captureAndCombineMedia(streamId) {
     }
 }
 
+setInterval(()=>{
+
+    // getData('http://127.0.0.1:5001/get_model_output',(err,output)=>{
+
+    //     console.log(output)
+
+    // })
+},500);
 
 
 async function captureAndStreamMedia(streamId) {
@@ -201,7 +253,6 @@ function streamToServer(mediaStream, videoUrl) {
 
 }
 
-
 function sendData(data, url, callback = () => { }) {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url, true);
@@ -223,8 +274,38 @@ function sendData(data, url, callback = () => { }) {
         console.error('Network error.');
     };
 }
+function getData(url, callback = () => { }) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.send();
 
+    let loaded = false; // flag to handle multiple callbacks
 
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            console.log('Success:', xhr.responseText);
+            callback(null, xhr.responseText); // pass the result to callback
+        } else {
+            console.log('Error:', xhr.statusText);
+            callback(new Error('Request failed with status: ' + xhr.statusText), null); // indicate failure
+        }
+        loaded = true;
+    };
+
+    // Handling the timeout manually
+    setTimeout(() => {
+        if (!loaded) {
+            console.error("GET to", url, "timed out");
+            callback(new Error("Request timed out"), null); // timeout error
+            loaded = true;
+        }
+    }, 5000); // Set the timeout as 5000 ms or 5 seconds
+
+    xhr.onerror = function () {
+        console.error('Network error.');
+        callback(new Error('Network error'), null); // network error
+    };
+}
 function saveToFile(blob, name) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -236,3 +317,4 @@ function saveToFile(blob, name) {
     window.URL.revokeObjectURL(url);
     a.remove();
 }
+

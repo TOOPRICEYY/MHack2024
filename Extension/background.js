@@ -1,22 +1,7 @@
-// function sendData(data, url) {
-//     const xhr = new XMLHttpRequest();
-//     xhr.open('PUT', url, true);
-//     xhr.setRequestHeader('Content-Type', 'text/plain');  // Set this according to your data type
-//     xhr.send("Test data");
+// background.js
 
-//     xhr.onload = function() {
-//         if (xhr.status === 200) {
-//             console.log('Success:', xhr.responseText);
-//         } else {
-//             console.log('Error:', xhr.statusText);
-//         }
-//     };
+  
 
-//     xhr.onerror = function() {
-//         console.error('Network error.');
-//     };
-// }
-// sendData('wowo','https://127.0.0.1:5001/stream_frames')
 chrome.runtime.onMessage.addListener(
     (request, sender, sendResponse) => {
         // Popup asks for current tab
@@ -36,7 +21,7 @@ chrome.runtime.onMessage.addListener(
 
             return true;
         }
-        if (request.command === "startCapture") {
+        else if (request.command === "startCapture") {
             console.log("sendingMedia")
  
             chrome.tabCapture.getMediaStreamId({consumerTabId: request.tabId}, (streamId) => {
@@ -54,6 +39,21 @@ chrome.runtime.onMessage.addListener(
             });
             return true; // Indicates that the response is sent asynchronously
         }
+
+        else if (request.action === "executeReact") {
+            chrome.scripting.executeScript({
+                target: { tabId: request.tabId },
+                files: ['react-Gui/build/static/js/main.88744a5a.js']
+              }, (results) => {
+                if (chrome.runtime.lastError) {
+                  sendResponse({status: "failed", error: chrome.runtime.lastError.message});
+                  return;
+                }
+                sendResponse({status: "success", data: results});
+              });
+              
+            return true; // Indicates that sendResponse will be asynchronous
+          }
         // } else if(message.action == "streamData"){
         //     console.log("streaming to",message.data.url)
         //     sendData(message.data,message.url);
