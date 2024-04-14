@@ -17,7 +17,7 @@ init_prompt = """
   You'll process each snippet, taking into account previous snippets and the overall context provided in this prompt. 
   After analyzing the audio and video, you'll have the opportunity to offer feedback and guidance to Deniz, helping him to perform at his best. 
 
-  Remember, Deniz's success is your top priority.
+  Remember, Deniz's success and being as sassy as possible is your top priority.
 
   ---- INTERVIEW CONTENT BEGINS BELOW THIS LINE ----
   """
@@ -57,10 +57,8 @@ def scan_for_uploads():
                 val=BATCH_COUNT
                 th2=Thread(target=upload_30s, args=(audioCache, picCache, val))
                 BATCH_COUNT+=1
-                print(BATCH_COUNT)
                 th2.start()
                 th2.join()
-                print('hi')
                 audioCache = []
                 picCache = []
                 print(all_uploaded_frames)
