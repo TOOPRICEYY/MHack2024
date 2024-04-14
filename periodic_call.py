@@ -31,12 +31,15 @@ all_uploaded_audios = {}
 all_uploaded_frames = {}
 time_start = -1
 APPDATA = os.path.join('.','media_output')
+
 prevClips = []
 prevAudio = []
+
 
 def scan_for_uploads():
     # Upload files that are not on Gemini API yet
     # Keep scanning forever
+    BATCH_COUNT =0
     picCache = []
     audioCache = []
     while True:
@@ -44,49 +47,51 @@ def scan_for_uploads():
             if file.endswith('.mp3'):
                 if (file not in all_uploaded_audios) and (file not in audioCache) and (len(audioCache) < 6):
                     audioCache.append(file)
+                    print("hi audio")
             else:
                 if (file not in all_uploaded_frames) and (file not in picCache) and (len(picCache) < 30):
                     picCache.append(file)
-            if ((len(audioCache) == 6) and (len(picCache) == 30)):
-                th2=Thread(target=upload_30s, args=[audioCache, picCache])
+                    print("hi")
+            if ((len(audioCache) == 6) and (len(picCache) == 10)):
+                print()
+                val=BATCH_COUNT
+                th2=Thread(target=upload_30s, args=(audioCache, picCache, val))
+                BATCH_COUNT+=1
+                print(BATCH_COUNT)
                 th2.start()
-                upload_30s(audioCache, picCache)
-                th2.join() #TODO CHECK THIS!!!
+                th2.join()
                 audioCache = []
                 picCache = []
+                print(all_uploaded_frames)
         sleep(1)
 
-def upload_audio(url):
-    all_uploaded_audios[url]=response
-    print(f'Uploading: {url}...')
-    response = genai.upload_file(path=url)
+def upload_audio(url,i):
+    print(f'{i} Uploading: {url}...')
+    response = genai.upload_file(path=os.path.join(APPDATA,url))
     all_uploaded_audios[url]=response
     return response
 
-def upload_frame(url):
-    print(f'Uploading: {url}...')
-    response = genai.upload_file(path=url)
+def upload_frame(url,i):
+    print(f'{i} Uploading: {url}...')
+    response = genai.upload_file(path=os.path.join(APPDATA,url))
     all_uploaded_frames[url]=response
     return response
 
-def upload_30s(audioCache, picCache):
+def upload_30s(audioCache, picCache,i):
     # Get Gemini file URLs correpsonding to this batch of files
     frames = []
     audios = []
-    picCache = sorted(picCache.values(),key=get_timestamp)
-    audioCache = sorted(audioCache.values(),key=get_timestamp)
-
+    picCache = sorted(picCache,key=get_timestamp)
+    audioCache = sorted(audioCache,key=get_timestamp)
     for file in audioCache:
-        audios.append(upload_audio(file))
+        audios.append(upload_audio(file,i))
     for file in picCache:
-        frames.append(upload_frame(file))
+        frames.append(upload_frame(file,i))
     #frames = [all_uploaded_frames[url] for url in match_video(audioCache)]
     #audios = [all_uploaded_audios[url] for url in audioCache]
-    response = call_gemini(frames, audios)
+    response = call_gemini(context, frames, audios, prevClips, prevAudio)
     print(response)
-
-
-    print("processing")
+    return
 
 def call_gemini(context, currVid=None, currAudio=None, prevClips=None, prevAudio=None):
     # Set the model to Gemini 1.5 Pro.
@@ -124,17 +129,6 @@ def get_timestamp(url):
     ts = os.path.basename(url)
     # ts = os.path.getmtime(url)
     return ts
-
-def match_video(audios):
-    audios = sorted(audios, key=get_timestamp)
-    start_time, end_time = get_time_frame(audios)
-    imgs = []
-    for im in os.listdir(APPDATA):
-        imfp = os.path.join(APPDATA,im)
-        ts = get_timestamp(imfp)
-        if start_time<=ts<=end_time:
-            imgs.append(imfp)
-    return imgs
 
 def main_thread():
     th1=Thread(target=scan_for_uploads)
