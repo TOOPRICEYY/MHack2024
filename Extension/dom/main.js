@@ -1,24 +1,24 @@
 
-  const chatWindow = document.getElementById('chatWindow');
+//   const chatWindow = document.getElementById('chatWindow');
 
-  function expandChat() {
-    chatWindow.classList.remove('translate-y-[calc(-100%+70px)]');
-    chatWindow.classList.remove('hover:translate-y-[calc(-100%+75px)]');
-  }
+//   function expandChat() {
+//     chatWindow.classList.remove('translate-y-[calc(-100%+70px)]');
+//     chatWindow.classList.remove('hover:translate-y-[calc(-100%+75px)]');
+//   }
   
-  // This function contracts the chat window
-  function contractChat() {
-    chatWindow.classList.add('translate-y-[calc(-100%+70px)]');
-    chatWindow.classList.add('hover:translate-y-[calc(-100%+75px)]');
+//   // This function contracts the chat window
+//   function contractChat() {
+//     chatWindow.classList.add('translate-y-[calc(-100%+70px)]');
+//     chatWindow.classList.add('hover:translate-y-[calc(-100%+75px)]');
 
-  }
-let chatEle = document.getElementById("chatInput");
-chatEle.addEventListener('focus',  ()=>{
-    expandChat();
-});
-chatEle.addEventListener('blur',  ()=>{
-    contractChat();
-});
+//   }
+//  let chatEle = document.getElementById("chatInput");
+// chatEle.addEventListener('focus',  ()=>{
+//     expandChat();
+// });
+// chatEle.addEventListener('blur',  ()=>{
+//     contractChat();
+// });
 
 // Assuming you're including Chart.js in your content script
 // console.log(ctx)
@@ -179,55 +179,7 @@ setTimeout(()=>{
           maintainAspectRatio: false // Ensures that aspect ratio is not maintained
         }
       });
-      // liveRadar = new Chart(liveRadarctx, {
-      //   type: 'radar',
-      //   data: {
-      //     labels: dataStreamCategories,
-      //     datasets: [{
-      //       label: 'Current Data',
-      //       data: [],
-      //       fill: true,
-      //       backgroundColor: 'rgba(75,192,192,0.4)',
-      //       borderColor: 'rgba(75,192,192,1)'
-      //     }, {
-      //       label: 'My Second Dataset',
-      //       data: [28, 48, 40, 19, 96, 27, 100],
-      //       fill: true,
-      //       backgroundColor: 'rgba(54, 162, 235, 0.2)',
-      //       borderColor: 'rgb(54, 162, 235)',
-      //       pointBackgroundColor: 'rgb(54, 162, 235)',
-      //       pointBorderColor: '#fff',
-      //       pointHoverBackgroundColor: '#fff',
-      //       pointHoverBorderColor: 'rgb(54, 162, 235)'
-      //     }]
-      //   },
-        
-      //   options: {
-      //     legend: {
-      //       // display: false,
-      //       position: 'bottom',
-      //       // labels: {
-      //       //   font: {
-      //       //     size: 2 // Adjust the font size here to make the legend smaller
-      //       //   },
-      //       //   padding: 2 // Adjust padding around text to reduce the space
-      //       // }
-      //     },
-      //     elements: {
-      //       line: {
-      //         borderWidth: 3
-      //       }
-      //     },
-      //     scale: {
-      //       ticks: {
-      //         beginAtZero: true
-      //       }
-      //     },
-      //     responsive: true,
-      //     maintainAspectRatio: true
-      //   }
-      // });
-      
+    
       
 console.log(liveRadar)
 
@@ -236,7 +188,6 @@ console.log(liveRadar)
     console.log(e);
 
 }
-
 
 
 function updateGraph(newData) {
@@ -284,21 +235,7 @@ function addData(chart, label,data, streamIndex) {
     chart.update();
   }
 
-//   setInterval(() => {
-// try{
-//     const randomValue = Math.floor(Math.random()*10)/10.0;
-//     const randomValue2 = Math.floor(Math.random()*10)/10.0;
 
-//     const currentTime = getCurrentTime();
-//     // updateGraph({ label: currentTime, value: randomValue });
-//     addData(liveGraph,currentTime,randomValue,"Tension")
-//     addData(liveGraph,currentTime,randomValue2,"Excitement")
-
-// }catch (e){
-//     console.log(e);
-
-// }
-//   }, 1000);
 async function pollForDataBatch() {
   let data = null
   const currentTime = getCurrentTime(); // Get the current time for labels
@@ -314,15 +251,8 @@ async function pollForDataBatch() {
       data = await response.json();
       data = data["response"]
       console.log(data)
-
-      // if(data = "404") {
-      //   console.log("no new data")
-      //   return
-
-      // }
-      // console.log(data)
   } catch (error) {
-      console.error('Error:', error);
+      console.log('No data to update with')
       return;
   }
 
@@ -354,20 +284,16 @@ async function pollForDataBatch() {
 
 // Update charts every second with new data
 setInterval(pollForDataBatch, 1000);
-
-
-
-
   // Send message on Enter
-  const chatInput = document.getElementById('chatInput');
-  chatInput.addEventListener('keypress', function (event) {
-      if (event.key === 'Enter') {
-          sendMessage();
-      }
-  });
-  function timeout(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+  //const chatInput = document.getElementById('chatInput');
+  //chatInput.addEventListener('keypress', function (event) {
+  //    if (event.key === 'Enter') {
+  //        sendMessage();
+  //    }
+  //});
+  //function timeout(ms) {
+  //  return new Promise(resolve => setTimeout(resolve, ms));
+//}
 // async function sleep(fn, ...args) {
 //     await timeout(3000);
 //     return fn(...args);
@@ -404,7 +330,6 @@ setInterval(pollForDataBatch, 1000);
     }
 }
 
-
 function addMessage(text, side) {
   const container = document.getElementById('messageContainer');
   const messageDiv = document.createElement('div');
@@ -413,5 +338,3 @@ function addMessage(text, side) {
   container.appendChild(messageDiv);
   container.scrollTop = container.scrollHeight; // Auto-scroll to the latest message
 }
-
-

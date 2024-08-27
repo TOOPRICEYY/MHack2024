@@ -5,48 +5,7 @@ import google.generativeai as genai
 from queue import Queue
 GOOGLE_API_KEY='AIzaSyD3CTe6s7RIWeQKVfrUaaGVEkteYOa7eKU'
 genai.configure(api_key=GOOGLE_API_KEY)
-# init_prompt = """
-#   You are Deniz's Interview Sidekick, an AI designed to assist him during his interview preparation. 
-#   Your mission is to provide him with valuable guidance and support as he navigates the interview process. 
-#   Your responses should be concise, informative, and encouraging, tailored to Deniz's individual needs. 
-#   Offer actionable advice on common interview questions, effective communication techniques, and resume building strategies. 
-#   Your goal is to empower Deniz to succeed in his interviews and boost his confidence.
-#   Throughout the interview, you'll provide real-time feedback and encouragement directly on Deniz's Google Meets call. 
 
-#   The interview will be conducted in 30-second snippets, each consisting of an audio and video file. 
-#   You'll process each snippet, taking into account previous snippets and the overall context provided in this prompt. 
-#   After analyzing the audio and video, you'll have the opportunity to offer feedback and guidance to Deniz, helping him to perform at his best. 
-
-#   Remember, Deniz's success and being as sassy as possible is your top priority. Try not to repeat yourself.
-
-#   ---- INTERVIEW CONTENT BEGINS BELOW THIS LINE ----
-#   """
-
-# init_prompt = f"""
-# You are an interview analyzer system designed to assist in live interviews. Your task is to focus solely on interpreting and responding to interview-related queries and prompts. Your primary function is to provide guidance, clarification, and analysis based on the interview context. You must strictly adhere to discussing interview-related topics and refrain from deviating into unrelated subjects.
-
-# Your objective is to guide the interviewee through the process effectively, ensuring they understand the questions, providing relevant feedback, and assisting with any inquiries they may have about the interview process or related topics.
-
-# Below are the guidelines for your operation:
-
-# Moves:
-
-# - checkPrompt: Ensure that any responses or queries align with the interview prompt or context.
-# - analyzeResponse: Evaluate the interviewee's responses for coherence, relevance, and depth.
-# - provideFeedback: Offer constructive feedback on the interviewee's performance, highlighting strengths and areas for improvement.
-# - clarifyQuestion: If the interviewee seems uncertain or confused about a question, provide clarification or rephrasing as needed.
-# - redirect: If the interviewee veers off-topic or discusses unrelated matters, gently steer the conversation back to the interview focus.
-# - summarizeProgress: Periodically summarize the interview progress and key points covered.
-# - concludeInterview: When the interview reaches its conclusion, wrap up the session by summarizing the discussion and expressing gratitude.
-
-# You should balance professionalism and informality, providing high-quality yet natural-sounding responses.
-# You should specifically focus on the content of the interviewee's speech.
-
-# Your audience is Deniz, so your responses should be concise, informative, and encouraging, and tailored to Deniz's individual needs. 
-
-# ---- THE CURRENT 30 SECONDS OF THE INTERVIEW BEGIN BELOW THIS LINE ----
-
-# """
 init_prompt = f"""
 You are an advanced emotional classifier system designed to analyze the psychological state and emotional nuances of speakers in conversations. Your primary objective is to accurately assess the emotional and psychological aspects of the speaker's communication.
 
@@ -118,7 +77,7 @@ chatQuery = ""
 textIsComplete = False
 textBuffer=''
 
-def scan_for_uploads(inq=None, outq=None, geminiPipe=None):
+def scan_for_uploads(inq=None, outq=None, geminiPipe=None): # TODO FAILING HERE
     # Upload files that are not on Gemini API yet
     # Keep scanning forever
     BATCH_COUNT = 0
@@ -127,34 +86,37 @@ def scan_for_uploads(inq=None, outq=None, geminiPipe=None):
     MAX_PIC = MAX_AUDIO * FRAME_RATE
     picCache = []
     audioCache = []
-    th3=Thread(target=call_gemini_lite,args=(inq,outq))
-    th3.start()
+    data_folder = "/mnt/c/Users/kirca_t5ih59c/Desktop/SideKick/media_output"
+    #th3=Thread(target=call_gemini_lite,args=(inq,outq))
+    #th3.start()
     while True:
-       
         sleep(1)
-        walker = next(os.walk("/Users/gp/Documents/A Files/Projects/Coding Projects/Hackathons/2024 MHACKS/media_output"))
-        # print("running sdfsfsf",walker)
+        if not len(os.listdir(data_folder)) == 0:
+            walker = next(os.walk(data_folder))
+            # print("running sdfsfsf",walker)
 
-        for file in walker[2]:
-            file = os.path.join(walker[0],file)
-            # print("running asd")
-            if file.endswith('.mp3'):
-                if (file not in all_uploaded_audios) and (file not in audioCache) and (len(audioCache) < MAX_AUDIO):
-                    audioCache.append(file)
-            elif file.endswith('.jpg'):
-                if (file not in all_uploaded_frames) and (file not in picCache) and (len(picCache) < MAX_PIC):
-                    picCache.append(file)
-            if ((len(audioCache) == MAX_AUDIO) and (len(picCache) == MAX_PIC)):
-                val=BATCH_COUNT
-                event = Event()
-                print(len(audioCache),len(picCache))
-                th2=Thread(target=upload_30s, args=(list(audioCache), list(picCache), val, event,geminiPipe))
-                BATCH_COUNT+=1
-                th2.start()
-                event.wait()        
-                th2.join()
-                audioCache = []
-                picCache = []
+            for file in walker[2]:
+                file = os.path.join(walker[0],file)
+                # print("running asd")
+                if file.endswith('.mp3'):
+                    if (file not in all_uploaded_audios) and (file not in audioCache) and (len(audioCache) < MAX_AUDIO):
+                        audioCache.append(file)
+                elif file.endswith('.jpg'):
+                    if (file not in all_uploaded_frames) and (file not in picCache) and (len(picCache) < MAX_PIC):
+                        picCache.append(file)
+                if ((len(audioCache) == MAX_AUDIO) and (len(picCache) == MAX_PIC)):
+                    val=BATCH_COUNT
+                    event = Event()
+                    #print(len(audioCache),len(picCache))
+                    th2=Thread(target=upload_30s, args=(list(audioCache), list(picCache), val, event,geminiPipe))
+                    BATCH_COUNT+=1
+                    th2.start()
+                    event.wait()        
+                    th2.join()
+                    audioCache = []
+                    picCache = []
+        else:
+            print('No files found!')
 
 def upload_audio(url,i):
     print(f'{i} Uploading: {url}...')
@@ -178,7 +140,9 @@ def upload_30s(audioCache, picCache,i,event,outq):
         audios.append(upload_audio(file,i))
     for file in mypicCache:
         frames.append(upload_frame(file,i))
-    response = call_gemini(context, frames, audios,outq)
+    response = ''
+    while response == '': # TODO HOW TO HANDLE LAG??
+        response = call_gemini(context, frames, audios, outq)
     print(response)
     event.set()
     return  
@@ -205,7 +169,7 @@ def call_gemini(context, currVid=None, currAudio=None, outq = None):
         request.append(responses[i])
     response = None
     tries = 0
-    while tries<5:
+    while tries<10:
         try:
             request.insert(0, str(msg['role'] + ' : ' + msg['content']))
             response = model.generate_content(request, request_options={"timeout": 600})
@@ -214,10 +178,10 @@ def call_gemini(context, currVid=None, currAudio=None, outq = None):
             outq.put(response.text)
             return response.text
         except Exception as e:
-            print("ran out!")
+            print(e)
             sleep(10)
             tries+=1
-    return '!!!!!!!!!!!!!!!!!failed to generate response from gemini'
+    return ''
 
 
 def call_gemini_lite(inq, outq):
@@ -270,9 +234,9 @@ def call_gemini_lite(inq, outq):
                 textIsComplete = False
                 textBuffer = ''
                 for token in response:
-                    print(token.text)
+                    #print(token.text)
                     textBuffer=textBuffer+token.text
-                    print(textBuffer)
+                    #print(textBuffer)
                 textIsComplete = True
                 chatQuery = ''
                 chatHistory.append(textBuffer+"\n")

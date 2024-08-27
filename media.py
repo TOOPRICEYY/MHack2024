@@ -5,7 +5,6 @@ import json
 import time
 from moviepy.editor import VideoFileClip
 from PIL import Image, ImageOps
-import numpy as np
 import subprocess
 from pydub import AudioSegment
 import numpy as np
@@ -46,7 +45,7 @@ def transcode_video(input_path, output_path):
         return False
     return True
 
-@app.route('/stream_frames', methods=['POST'])
+@app.route('/stream_frames', methods=['POST']) # TODO SOME MECHANISM TO REJECT FILES IF THERE IS TOO MUCH BACKLOG?
 def stream_frames():
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
@@ -128,7 +127,7 @@ def get_state_data():
     except:  return json.dumps({"response":{"status":"404"}})
 
     # print(data)
-    print("\n\n\n\n")
+    #print("\n\n\n\n")
 
     emotions = ['joy":', 'sadness":', 'anger":', 'fear":', 'disgust":', 'surprise":']
     fullstr = data
@@ -137,11 +136,11 @@ def get_state_data():
         try: index = fullstr.lower().index(x)
         except: continue
         if(index!=-1): 
-            print("'"+fullstr[len(x)+index+1:len(x)+index+4]+"'")
+            #print("'"+fullstr[len(x)+index+1:len(x)+index+4]+"'")
             try: output[x] = float(fullstr[len(x)+index+1:len(x)+index+4])/2.0
             except: pass
 
-    print(output)
+    #print(output)
     if(data==None): return json.dumps({"response":{"status":"404"}})
     return json.dumps({"response":output})
 
@@ -174,12 +173,10 @@ def exit_handler():
             kill_thread(thread)
 
 # Register the exit handler
-
 atexit.register(exit_handler)
 if __name__ == '__main__':
     walk =  next(os.walk("media_output"))
     for f in walk[2]: os.remove(os.path.join(walk[0],f))
-   
-    tr=Thread(target=scan_for_uploads,args=(receivePipe,sendPipe,geminiPipe))
+    tr=Thread(target=scan_for_uploads,args=(receivePipe, sendPipe, geminiPipe))
     tr.start()
     app.run(debug=True, port=5001)#, ssl_context=('cert.pem', 'server.key'))

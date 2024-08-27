@@ -29,8 +29,6 @@ function myInitCode() {
 function initGui()
 
 {
-
-  
       console.log("executing script")
 
     const targetNode = document.querySelector('body');
